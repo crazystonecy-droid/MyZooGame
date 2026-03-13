@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>动物园大亨：合成变异版 (纯净稳定最终版)</title>
+    <title>动物园大亨：合成变异版 (防卡关极速结算版)</title>
     <!-- 屏蔽 favicon 报错 -->
     <link rel="icon" href="data:;base64,=">
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -13,9 +13,23 @@
     <script src="https://cdn.jsdelivr.net/npm/pixi-spine@2.1.14/dist/pixi-spine.js"></script>
 
     <style>
-        /* ==================== 1. 基础与自适应 ==================== */
-        * { box-sizing: border-box; touch-action: pan-x pan-y; }
-        html, body { width: 100%; height: 100%; margin: 0; padding: 0; position: fixed; overflow: hidden; overscroll-behavior: none; background-color: #2c3e50; font-family: "Microsoft YaHei", sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; display: flex; justify-content: center; align-items: center; }
+        /* ==================== 1. 基础与移动端手感优化 ==================== */
+        * { 
+            box-sizing: border-box; 
+            touch-action: pan-x pan-y; 
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-touch-callout: none !important;
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            outline: none !important;
+        }
+        
+        img {
+            -webkit-user-drag: none;
+            pointer-events: none;
+        }
+
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; position: fixed; overflow: hidden; overscroll-behavior: none; background-color: #2c3e50; font-family: "Microsoft YaHei", sans-serif; display: flex; justify-content: center; align-items: center; }
         
         #game-container { 
             width: 100%; 
@@ -69,10 +83,10 @@
         .tool-cost { position: absolute; top: -10px; right: -10px; background: #f1c40f; color: #946d04; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; }
 
         /* 卡牌样式 */
-        .tile { width: 73px; height: 91px; position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); cursor: pointer; z-index: 10; }
+        .tile { position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); cursor: pointer; z-index: 10; pointer-events: auto; }
         .tile:active { filter: brightness(0.8) drop-shadow(1px 2px 1px rgba(0,0,0,0.3)); }
         .tile.disabled { filter: brightness(0.4) grayscale(0.5) !important; pointer-events: none !important; }
-        .tile.in-dock { position: relative !important; margin: 0; filter: none; width: 13.5%; height: 80%; }
+        .tile.in-dock { position: relative !important; margin: 0; filter: none; width: 13.5% !important; height: 80% !important; }
         .tile.in-extra { position: absolute !important; transform: scale(0.8) !important; pointer-events: auto !important; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)) !important; transition: all 0.3s ease; }
 
         /* ==================== 3. 动物园 & 游客 ==================== */
@@ -308,6 +322,7 @@
     </div>
 
     <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
         let partyCoinTimer = null;
         let currentBookTab = ''; 
 
@@ -394,11 +409,13 @@
                 let destroyFn = () => {
                     if(isDestroyed) return;
                     isDestroyed = true;
-                    this.app.stage.removeChild(anim);
-                    anim.destroy();
-                    if(this.app.stage.children.length === 0) {
-                        this.app.view.style.display = 'none';
-                    }
+                    try {
+                        this.app.stage.removeChild(anim);
+                        anim.destroy();
+                        if(this.app.stage.children.length === 0) {
+                            this.app.view.style.display = 'none';
+                        }
+                    } catch(e) {}
                 };
                 
                 setTimeout(destroyFn, 3500); 
@@ -411,20 +428,28 @@
             BOXES:['./img/box1.png', './img/box2.png', './img/box3.png', './img/box4.png', './img/box5.png', './img/box6.png', './img/box7.png', './img/box8.png'],
             BALLS:['./img/pokeball1.png', './img/pokeball2.png', './img/pokeball3.png', './img/pokeball4.png'],
             
-            // 【纯净单图配置】：去除了导致渲染冲突的 mc 属性
             ANIMALS: (function(){
                 let arr = [];
-                arr.push({ id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal' });
+                arr.push({ 
+                    id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal',
+                    mc: { path: './mc/cat0/', suffix: '.png', fps: 12, pad: 0 } 
+                });
                 for(let i=1; i<=20; i++) {
                     arr.push({ id: `cat${i}`, type: 'cat', baseName: '猫咪大家族', name: `特殊猫咪${i}`, url: `./img/cat${i}.png`, rarity: 'rare' });
                 }
                 
-                arr.push({ id: 'corn0', type: 'corn', baseName: '疯狂牛牛', name: '基础牛牛', url: './img/corn0.png', rarity: 'normal' });
+                arr.push({ 
+                    id: 'corn0', type: 'corn', baseName: '疯狂牛牛', name: '基础牛牛', url: './img/corn0.png', rarity: 'normal',
+                    mc: { path: './mc/corn0/', suffix: '.png', fps: 12, pad: 0 } 
+                });
                 for(let i=1; i<=9; i++) {
                     arr.push({ id: `corn${i}`, type: 'corn', baseName: '疯狂牛牛', name: `特殊牛牛${i}`, url: `./img/corn${i}.png`, rarity: 'rare' });
                 }
                 
-                arr.push({ id: 'capybara0', type: 'capybara', baseName: '呆萌水豚', name: '基础水豚', url: './img/capybara0.png', rarity: 'normal' });
+                arr.push({ 
+                    id: 'capybara0', type: 'capybara', baseName: '呆萌水豚', name: '基础水豚', url: './img/capybara0.png', rarity: 'normal',
+                    mc: { path: './mc/capybara0/', suffix: '.png', fps: 12, pad: 0 } 
+                });
                 for(let i=1; i<=4; i++) {
                     arr.push({ id: `capybara${i}`, type: 'capybara', baseName: '呆萌水豚', name: `特殊水豚${i}`, url: `./img/capybara${i}.png`, rarity: 'rare' });
                 }
@@ -459,7 +484,7 @@
 
         // ==================== 3. 状态与存储 ====================
         let State = { coins: 0, animals:[], level: 1, habitatLevels: {}, trashCount: 0 };
-        let MatchState = { tiles: [], dock:[], extraDock: [], history:[], active: false, tempRewards:[], isPrankMode: false, prankTrashCount: 0, pendingRewardAnim: false };
+        let MatchState = { tiles: [], dock:[], extraDock: [], history:[], active: false, tempRewards:[], isPrankMode: false, prankTrashCount: 0 };
 
         const Storage = {
             load() {
@@ -565,10 +590,11 @@
                 document.getElementById('result-modal').style.display = 'none';
                 this.mapEl.innerHTML=''; this.dockEl.innerHTML=''; this.exDockEl.innerHTML='';
                 let temp = document.getElementById('temp-dock'); temp.innerHTML=''; temp.classList.remove('has-items');
-                MatchState = { tiles:[], dock:[], extraDock:[], history:[], active:true, tempRewards:[], isPrankMode:false, pendingRewardAnim:false };
+                MatchState = { tiles:[], dock:[], extraDock:[], history:[], active:true, tempRewards:[], isPrankMode:false };
                 this.generateLevel(State.level); this.checkCover();
             },
 
+            // 【重构难点1】：移除死锁率极高的局部洗牌，恢复全局真随机，并压缓种类增速
             generateLevel(level) {
                 const mapHeight = this.mapEl.clientHeight || 500;
                 let scale = 1;
@@ -622,30 +648,18 @@
 
                 let rem = configs.length % 3; if(rem !== 0) configs.splice(configs.length-rem, rem);
                 
+                // 延缓难度爬升
                 let typeC;
                 if (level === 1) typeC = 3;
                 else if (level === 2) typeC = 4;
                 else if (level === 3) typeC = 5;
-                else typeC = Math.min(4 + Math.floor((level-2)/3), 8);
+                else typeC = Math.min(4 + Math.floor((level-3)/2), 7); // 极度平滑
 
                 let types =[]; 
                 for(let i=0; i<configs.length/3; i++) { let t = i%typeC; types.push(t,t,t); }
                 
-                let shuffledTypes = [];
-                let chunkSize = typeC * 3; 
-                for (let i = 0; i < types.length; i += chunkSize) {
-                    let chunk = types.slice(i, i + chunkSize);
-                    chunk.sort(() => Math.random() - 0.5);
-                    shuffledTypes.push(...chunk);
-                }
-                types = shuffledTypes;
-                
-                for(let i=0; i<types.length; i++){
-                    if(Math.random()<0.2){
-                        let r = Math.floor(Math.random()*types.length);
-                        let temp = types[i]; types[i] = types[r]; types[r] = temp;
-                    }
-                }
+                // 恢复纯全局随机打乱，消灭底层死锁！
+                types.sort(() => Math.random() - 0.5);
 
                 configs.forEach((pos, i) => {
                     let div = document.createElement('div'); div.className = 'tile'; 
@@ -658,6 +672,7 @@
                 });
             },
             
+            // 【核心修复2】物理碰撞面积缩紧至 65%，杜绝空气墙遮挡
             checkCover() {
                 MatchState.tiles.forEach(t => { if(!t.inDock && !t.isRm && !t.isEx) t.el.classList.remove('disabled'); });
                 let active = MatchState.tiles.filter(t => !t.inDock && !t.isRm && !t.isEx);
@@ -665,8 +680,8 @@
                     for (let j=0; j<active.length; j++) {
                         if (i===j) continue;
                         let top = active[j], bot = active[i];
-                        let hitW = top.w * 0.75; 
-                        let hitH = top.h * 0.75;
+                        let hitW = top.w * 0.65; 
+                        let hitH = top.h * 0.65;
                         if (top.l > bot.l && Math.abs(top.x - bot.x) < hitW && Math.abs(top.y - bot.y) < hitH) { 
                             bot.el.classList.add('disabled'); break; 
                         }
@@ -678,7 +693,7 @@
                 if(!MatchState.active || t.inDock || t.isRm || MatchState.dock.length >= 7) return;
                 if(!t.isEx) {
                     let tops = MatchState.tiles.filter(a => a.id!==t.id && !a.inDock && !a.isRm && !a.isEx && a.l > t.l);
-                    let hitW = t.w * 0.75; let hitH = t.h * 0.75;
+                    let hitW = t.w * 0.65; let hitH = t.h * 0.65;
                     if(tops.some(top => Math.abs(top.x - t.x) < hitW && Math.abs(top.y - t.y) < hitH)) return; 
                 }
                 AudioSys.click(); MatchState.history.push({ type: 'pick', tile: t, prev: t.isEx ? 'ex' : 'map' });
@@ -716,6 +731,7 @@
                 setTimeout(onEnd, 300); 
             },
             
+            // 【核心修复3】消灭一切不必要的干等时间，逻辑丝滑衔接
             checkMatch() {
                 let counts = {}; MatchState.dock.forEach(t => { if(!t.isRemoving) counts[t.type] = (counts[t.type]||0)+1; });
                 let matchType = null;
@@ -742,36 +758,34 @@
                         let r = t.el.getBoundingClientRect(), g = document.createElement('div'); g.className='tile'; g.style.cssText = `background-image:${t.el.style.backgroundImage};position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:99999;transition:all 0.25s ease`; document.body.appendChild(g); g.offsetHeight; g.style.transform='scale(0)'; g.style.opacity=0; setTimeout(()=>g.remove(),250); t.el.remove(); 
                     });
 
+                    let isLastMatch = (MatchState.tiles.filter(t=>!t.inDock&&!t.isEx&&!t.isRm).length===0 && MatchState.dock.filter(t=>!t.isRemoving).length===0 && MatchState.extraDock.length===0);
                     let rand = Math.random();
-                    if(rand < 0.2) { MatchState.pendingRewardAnim = true; this.triggerAniReward(); } 
-                    else if (rand < 0.26) { MatchState.pendingPrank = true; this.triggerTrashReward(); } 
-                    else { EventSystem.flyCoin(10, sX-12, sY-12, false); }
+
+                    if(rand < 0.2) { 
+                        this.triggerAniReward(isLastMatch); 
+                    } else if (rand < 0.26) { 
+                        this.triggerTrashReward(isLastMatch); 
+                    } else { 
+                        EventSystem.flyCoin(10, sX-12, sY-12, false); 
+                        // 如果这是最后一次匹配，且没有掉落，0.5秒后立刻秒弹过关，绝不干等！
+                        if (isLastMatch) {
+                            MatchState.active = false;
+                            setTimeout(() => this.levelComplete(), 500);
+                        }
+                    }
                     
-                    setTimeout(() => { this.checkMatch(); }, 300);
-                    
+                    if (!isLastMatch) {
+                        setTimeout(() => { this.checkMatch(); }, 200);
+                    }
                 } else {
                     let valid = MatchState.dock.filter(t=>t.isLanded && !t.isRemoving);
                     if(valid.length>=7 && !Object.values(counts).some(c=>c>=3)) { 
                         MatchState.active=false; setTimeout(()=>this.showOver(), 400); return;
                     }
-                    this.checkWin();
-                }
-            },
-           
-           checkWin() {
-                if(MatchState.tiles.filter(t=>!t.inDock&&!t.isEx&&!t.isRm).length===0 && MatchState.dock.filter(t=>!t.isRemoving).length===0 && MatchState.extraDock.length===0) {
-                    MatchState.active=false; 
-                    if(MatchState.pendingPrank || MatchState.isPrankMode) {
-                        MatchState.pendingLevelComplete = true;
-                    } else {
-                        // 如果有展示动画，等待2.5秒再弹窗，避免盖住
-                        let waitTime = MatchState.pendingRewardAnim ? 2500 : 100;
-                        setTimeout(() => this.levelComplete(), waitTime); 
-                    }
                 }
             },
 
-            triggerAniReward() {
+            triggerAniReward(isLastMatch) {
                 let rand = Math.random();
                 let ani, animName;
                 
@@ -792,10 +806,8 @@
                     let poof = document.createElement('div'); poof.className='merge-poof'; poof.style.position='fixed'; poof.style.left='50%'; poof.style.top='50%'; 
                     document.body.appendChild(poof); setTimeout(()=>poof.remove(), 300);
 
-                    // 【核心纯净版展示】：直接显示静态 url 图，稳如泰山
                     let fly = document.createElement('img'); 
-                    fly.src = ani.url;
-                    fly.style.cssText = 'position:fixed; z-index:100000; width:150px; height:150px; object-fit:contain; left:50%; top:50%; transform:translate(-50%,-50%) scale(1.5); pointer-events:none; opacity: 1; filter:drop-shadow(0 5px 10px rgba(0,0,0,0.5));';
+                    fly.style.cssText = 'position:fixed; z-index:100000; width:150px; height:150px; object-fit:contain; left:50%; top:50%; transform:translate(-50%,-50%) scale(1.5); pointer-events:none; opacity: 1;';
                     document.body.appendChild(fly);
 
                     let flyUp = () => {
@@ -803,7 +815,7 @@
                         let targetX = dR.left + dR.width / 2;
                         let targetY = dR.top + dR.height / 2;
 
-                        fly.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)'; 
+                        fly.style.transition = 'all 0.4s cubic-bezier(0.25, 1, 0.5, 1)'; 
                         fly.style.left = targetX + 'px'; 
                         fly.style.top = targetY + 'px'; 
                         fly.style.transform = 'translate(-50%,-50%) scale(0.4)'; 
@@ -814,12 +826,45 @@
                             fly.style.opacity = '0';
                             setTimeout(() => {
                                 fly.remove(); over.remove(); MatchGame.updateTemp(); 
+                                // 【核心修补】：飞进槽位的一瞬间立刻弹窗，杜绝任何拖沓！
+                                if(isLastMatch) { MatchGame.levelComplete(); }
                             }, 100);
-                        }, 500);
+                        }, 400);
                     };
 
-                    // 原地炫酷展示 1.2 秒后稳稳起飞
-                    setTimeout(flyUp, 1200);
+                    // 原地无限探针播放器
+                    if (ani.mc) {
+                        let cur = 1;
+                        let getFrame = (idx) => ani.mc.pad ? String(idx).padStart(ani.mc.pad, '0') : idx;
+                        
+                        let lastValidSrc = `${ani.mc.path}${getFrame(1)}${ani.mc.suffix}`;
+                        fly.src = lastValidSrc;
+                        let isEnd = false;
+
+                        let playNext = () => {
+                            if (isEnd) return;
+                            cur++;
+                            let trySrc = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
+                            let imgTester = new Image();
+                            
+                            imgTester.onload = () => {
+                                lastValidSrc = trySrc; 
+                                fly.src = trySrc;
+                                setTimeout(playNext, 1000 / (ani.mc.fps || 24));
+                            };
+                            
+                            imgTester.onerror = () => {
+                                isEnd = true;
+                                fly.src = lastValidSrc;
+                                setTimeout(flyUp, 200);
+                            };
+                            imgTester.src = trySrc; 
+                        };
+                        setTimeout(playNext, 1000 / (ani.mc.fps || 24));
+                    } else {
+                        fly.src = ani.url;
+                        setTimeout(flyUp, 1200);
+                    }
                 };
 
                 let played = SpineManager.play(animName, showNewAnimalAction, () => {});
@@ -839,7 +884,7 @@
                 }
             },
 
-            triggerTrashReward() {
+            triggerTrashReward(isLastMatch) {
                 let over = document.createElement('div'); over.className='reward-dim-layer'; document.body.appendChild(over);
                 let fly = document.createElement('div'); fly.innerText='🗑️'; fly.style.cssText='font-size:80px;position:fixed;z-index:99999;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);transition:transform 0.4s'; document.body.appendChild(fly);
                 fly.offsetHeight; fly.style.transform='translate(-50%,-50%) scale(1.5)';
@@ -847,10 +892,13 @@
                     over.style.opacity = '0'; 
                     fly.style.opacity = '0'; 
                     setTimeout(() => {
-                        fly.remove(); over.remove(); EventSystem.enterPrank(); 
+                        fly.remove(); over.remove(); 
+                        if(isLastMatch) MatchState.pendingLevelComplete = true; // 让捣乱结束后弹过关窗
+                        EventSystem.enterPrank(); 
                     }, 200);
-                }, 1500);
+                }, 1200); // 捣乱显示缩短
             },
+            
             updateTemp() {
                 let d = document.getElementById('temp-dock'); d.classList.add('has-items'); d.innerHTML='';
                 MatchState.tempRewards.forEach(a => { let i = document.createElement('img'); i.src=a.url; i.className='mini-reward'; d.appendChild(i); });
@@ -1021,7 +1069,7 @@
 
                     timer = setTimeout(() => { 
                         long = true; 
-                        this.merge(data, wrap, zone, cands.length >= 2); 
+                        this.merge(data, wrap, zone, cands.length >= 2, meagerDestroyer); 
                     }, 400); 
                 };
                 
@@ -1061,7 +1109,7 @@
                 }
             },
             
-           merge(data, tWrap, zone, canMerge) {
+           merge(data, tWrap, zone, canMerge, meagerDestroyer) {
                 if(!canMerge) { 
                     tWrap.classList.remove('charging'); 
                     tWrap.style.animation = 'none'; tWrap.offsetHeight; tWrap.style.animation = 'errorShake 0.3s';
@@ -1078,6 +1126,9 @@
                 });
 
                 setTimeout(() => {
+                    tWrap.style.display = 'none';
+                    if(meagerDestroyer) meagerDestroyer();
+
                     let cands = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1));
                     State.animals = State.animals.filter(a=>!cands.map(x=>x.uuid).includes(a.uuid));
                     
