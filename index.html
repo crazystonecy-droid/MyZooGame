@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>动物园大亨：合成变异版 (完美居中与防死锁版)</title>
+    <title>动物园大亨：合成变异版 (动物园比例完美适配版)</title>
     <!-- 屏蔽 favicon 报错 -->
     <link rel="icon" href="data:;base64,=">
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -21,17 +21,16 @@
             width: 100%; 
             height: 100%; 
             max-width: 750px; 
-            margin: 0 auto; /* 保证居中 */
+            margin: 0 auto; 
             position: relative; 
             background-color: #fff8ee; 
             overflow: hidden; 
             display: flex; 
             flex-direction: column; 
             box-shadow: 0 0 30px rgba(0,0,0,0.5); 
-            padding-bottom: env(safe-area-inset-bottom, 0px); /* 避开全面屏底部黑条 */
+            padding-bottom: env(safe-area-inset-bottom, 0px); 
         }
         
-        /* 桌面端大屏幕完美居中模拟手机比例 */
         @media (min-aspect-ratio: 3/4) { 
             #game-container { 
                 height: 94%; 
@@ -88,7 +87,9 @@
         #page-habitat { background-color: #a8e6cf; display: flex; flex-direction: column; position: relative; }
 
         #global-visitor-layer { position: absolute; top: 0; left: 0; width: 300%; height: 100%; z-index: 15; pointer-events: none; }
-        #habitat-animal-area { position: absolute; top: 0; left: 0; right: 0; bottom: 416px; background-color: #b8e994; display: flex; flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; z-index: 5; scroll-behavior: smooth; cursor: grab; }
+        
+        /* 【核心修复】：动物区高度改为占据上方 65%，游客区占下方 35% */
+        #habitat-animal-area { position: absolute; top: 0; left: 0; right: 0; bottom: 35%; background-color: #b8e994; display: flex; flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; z-index: 5; scroll-behavior: smooth; cursor: grab; }
         #habitat-animal-area:active { cursor: grabbing; }
         #habitat-animal-area::-webkit-scrollbar { display: none; }
 
@@ -101,7 +102,8 @@
         .zone-nav-btn { position: absolute; top: 40%; transform: translateY(-50%); width: 40px; height: 40px; line-height: 40px; background: rgba(255,255,255,0.3); border-radius: 50%; text-align: center; font-size: 20px; cursor: pointer; z-index: 50; border: 2px solid rgba(255,255,255,0.6); color: #fff; transition: opacity 0.3s; }
         .zone-prev { left: 10px; display: none; } .zone-next { right: 10px; display: none; }
 
-        #habitat-visitor-area { position: absolute; bottom: 0; left: 0; right: 0; height: 416px; background-color: #f5f6fa; overflow: visible; z-index: 10; border-top: 4px solid #d1d8e0; }
+        /* 【核心修复】：游客区高度改为 35% */
+        #habitat-visitor-area { position: absolute; bottom: 0; left: 0; right: 0; height: 35%; background-color: #f5f6fa; overflow: visible; z-index: 10; border-top: 4px solid #d1d8e0; }
 
         .visitor { position: absolute; image-rendering: pixelated; transform: scale(0.6); transform-origin: bottom center; pointer-events: none; filter: drop-shadow(0 1px 0px rgba(0,0,0,0.2)); }
         .visitor.face-left { transform: scale(0.6) scaleX(-1); }
@@ -414,7 +416,7 @@
             
             ANIMALS: (function(){
                 let arr = [];
-                // 【核心改进】：不再需要 frames 参数！配置器会自动侦测
+                // 去除帧数限制，引擎会自动探测到不存在的图片为止
                 arr.push({ 
                     id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal',
                     mc: { path: './mc/cat0/', suffix: '.png', fps: 12, pad: 0 } 
@@ -580,7 +582,6 @@
             },
 
             generateLevel(level) {
-                // 【核心修复】动态计算屏幕高度，自动缩小卡牌以防越界
                 const mapHeight = this.mapEl.clientHeight || 500;
                 let scale = 1;
                 if (mapHeight < 480) scale = 0.85; 
@@ -648,14 +649,11 @@
                     div.style.backgroundImage = `url(${Config.BOXES[types[i] % Config.BOXES.length]})`;
                     div.style.left = pos.x+'px'; div.style.top = pos.y+'px'; div.style.zIndex = 100 + pos.l*100 + i;
                     div.style.width = W + 'px'; div.style.height = H + 'px';
-                    // 记录真实的缩放后宽高，用于遮挡判定！
                     let tile = { id: i, el: div, type: types[i], x: pos.x, y: pos.y, l: pos.l, w: W, h: H, inDock: false, isEx: false, isRm: false, oX: pos.x, oY: pos.y, oZ: div.style.zIndex };
                     div.onpointerdown = (e) => { e.preventDefault(); e.stopPropagation(); this.clickTile(tile); };
                     this.mapEl.appendChild(div); MatchState.tiles.push(tile);
                 });
             },
-            
-            // 【核心修复防死锁】采用真实的 tile.w 和 tile.h 进行碰撞计算，绝不错杀！
             checkCover() {
                 MatchState.tiles.forEach(t => { if(!t.inDock && !t.isRm && !t.isEx) t.el.classList.remove('disabled'); });
                 let active = MatchState.tiles.filter(t => !t.inDock && !t.isRm && !t.isEx);
@@ -663,9 +661,7 @@
                     for (let j=0; j<active.length; j++) {
                         if (i===j) continue;
                         let top = active[j], bot = active[i];
-                        if (top.l > bot.l && Math.abs(top.x - bot.x) < (top.w - 3) && Math.abs(top.y - bot.y) < (top.h - 3)) { 
-                            bot.el.classList.add('disabled'); break; 
-                        }
+                        if (top.l > bot.l && Math.abs(top.x - bot.x) < (top.w - 3) && Math.abs(top.y - bot.y) < (top.h - 3)) { bot.el.classList.add('disabled'); break; }
                     }
                 }
             },
@@ -765,7 +761,7 @@
                     ani = rarePool[Math.floor(Math.random() * rarePool.length)];
                     animName = 'open2';  
                 }
-
+                
                 MatchState.tempRewards.push(ani);
                 let over = document.createElement('div'); over.className='reward-dim-layer'; document.body.appendChild(over);
 
@@ -777,6 +773,7 @@
                     fly.style.cssText = 'position:fixed; z-index:100000; width:150px; height:150px; object-fit:contain; left:50%; top:50%; transform:translate(-50%,-50%) scale(1.5); pointer-events:none; opacity: 1;';
                     document.body.appendChild(fly);
 
+                    // 【核心重构：无限自适应探针播放器】
                     if (ani.mc) {
                         let cur = 1;
                         let getFrame = (idx) => ani.mc.pad ? String(idx).padStart(ani.mc.pad, '0') : idx;
@@ -813,6 +810,7 @@
                     }
 
                     setTimeout(() => {
+                        // 起飞前停止试探器，并保持当前 src
                         fly.dataset.stopped = 'true';
                         if(fly.dataset.mcTimer) {
                             clearTimeout(fly.dataset.mcTimer);
@@ -1022,7 +1020,7 @@
 
                     img.className = 'zoo-animal idle'; 
 
-                    // 【核心修复防误触】：判断够不够合，够了才播特效
+                    // 【预判拦截：不够 2 只坚决不播特效】
                     let cands = State.animals.filter(a => a.id === data.id && (a.level || 1) === (data.level || 1));
                     if (cands.length >= 2) {
                         let rect = wrap.getBoundingClientRect();
@@ -1034,7 +1032,7 @@
 
                     timer = setTimeout(() => { 
                         long = true; 
-                        this.merge(data, wrap, zone); 
+                        this.merge(data, wrap, zone, cands.length >= 2); 
                     }, 400); 
                 };
                 
@@ -1074,16 +1072,16 @@
                 }
             },
             
-           merge(data, tWrap, zone) {
-                let cands = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1));
-                if(cands.length < 2) { 
+           merge(data, tWrap, zone, canMerge) {
+                if(!canMerge) { 
                     tWrap.classList.remove('charging'); 
                     tWrap.style.animation = 'none'; tWrap.offsetHeight; tWrap.style.animation = 'errorShake 0.3s';
                     let tip = document.createElement('div'); tip.className = 'merge-text'; tip.innerText = "缺少同类!"; 
                     tip.style.left = tWrap.style.left; tip.style.top = tWrap.style.top; zone.appendChild(tip); setTimeout(() => tip.remove(), 1000);
                     return; 
                 }
-                
+
+                let cands = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1));
                 let tX = parseFloat(tWrap.style.left), tY = parseFloat(tWrap.style.top);
                 let partners = cands.filter(a=>a.uuid!==data.uuid);
                 partners.forEach(p => {
@@ -1275,7 +1273,7 @@
                 } else {
                     v.el.className='visitor walking'; 
                     let tX = Math.random()*(w-40), tY;
-                    if(tX < w/3*2) tY = h*0.35 + Math.random()*(h-130 - h*0.35); else tY = (h-416+10) + Math.random()*(40);
+                    if(tX < w/3*2) tY = h*0.4 + Math.random()*(h*0.4); else tY = (h * 0.65 + 10) + Math.random()*(h * 0.35 - 50);
                     let dur = Math.max(1000, Math.hypot(tX-v.x, tY-v.y)/60*1000);
 
                     requestAnimationFrame(() => {
