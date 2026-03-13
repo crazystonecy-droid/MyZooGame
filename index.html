@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>动物园大亨：合成变异版 (防微信劫持稳定版)</title>
+    <title>动物园大亨：合成变异版 (纯净稳定最终版)</title>
     <!-- 屏蔽 favicon 报错 -->
     <link rel="icon" href="data:;base64,=">
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -293,7 +293,7 @@
                 </div>
                 <div class="bottom-dock">
                     <div class="dock-btn btn-express" onclick="MatchGame.startLevel()"><div style="font-size:24px;">📦</div> 快递</div>
-                    <div class="dock-btn btn-party" onclick="EventSystem.startParty()"><div style="font-size:24px;">🎉</div> 派解</div>
+                    <div class="dock-btn btn-party" onclick="EventSystem.startParty()"><div style="font-size:24px;">🎉</div> 派对</div>
                     <div class="dock-btn btn-book" onclick="UI.openBook()"><div style="font-size:24px;">📖</div> 图鉴</div>
                 </div>
             </div>
@@ -411,32 +411,20 @@
             BOXES:['./img/box1.png', './img/box2.png', './img/box3.png', './img/box4.png', './img/box5.png', './img/box6.png', './img/box7.png', './img/box8.png'],
             BALLS:['./img/pokeball1.png', './img/pokeball2.png', './img/pokeball3.png', './img/pokeball4.png'],
             
-            // 【核心规则】：对于有序列帧的动物，必须配置 frames 参数。
+            // 【纯净单图配置】：去除了导致渲染冲突的 mc 属性
             ANIMALS: (function(){
                 let arr = [];
-                // 猫配置 20 帧
-                arr.push({ 
-                    id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal',
-                    mc: { path: './mc/cat0/', suffix: '.png', frames: 20, fps: 24, pad: 0 } 
-                });
+                arr.push({ id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal' });
                 for(let i=1; i<=20; i++) {
                     arr.push({ id: `cat${i}`, type: 'cat', baseName: '猫咪大家族', name: `特殊猫咪${i}`, url: `./img/cat${i}.png`, rarity: 'rare' });
                 }
                 
-                // 牛配置 10 帧 (0-9 算作 10 帧。如果是 1.png 到 10.png 也是 10 帧)
-                arr.push({ 
-                    id: 'corn0', type: 'corn', baseName: '疯狂牛牛', name: '基础牛牛', url: './img/corn0.png', rarity: 'normal',
-                    mc: { path: './mc/corn0/', suffix: '.png', frames: 10, fps: 24, pad: 0 } 
-                });
+                arr.push({ id: 'corn0', type: 'corn', baseName: '疯狂牛牛', name: '基础牛牛', url: './img/corn0.png', rarity: 'normal' });
                 for(let i=1; i<=9; i++) {
                     arr.push({ id: `corn${i}`, type: 'corn', baseName: '疯狂牛牛', name: `特殊牛牛${i}`, url: `./img/corn${i}.png`, rarity: 'rare' });
                 }
                 
-                // 水豚配置 5 帧 (举例)
-                arr.push({ 
-                    id: 'capybara0', type: 'capybara', baseName: '呆萌水豚', name: '基础水豚', url: './img/capybara0.png', rarity: 'normal',
-                    mc: { path: './mc/capybara0/', suffix: '.png', frames: 5, fps: 24, pad: 0 } 
-                });
+                arr.push({ id: 'capybara0', type: 'capybara', baseName: '呆萌水豚', name: '基础水豚', url: './img/capybara0.png', rarity: 'normal' });
                 for(let i=1; i<=4; i++) {
                     arr.push({ id: `capybara${i}`, type: 'capybara', baseName: '呆萌水豚', name: `特殊水豚${i}`, url: `./img/capybara${i}.png`, rarity: 'rare' });
                 }
@@ -776,7 +764,8 @@
                     if(MatchState.pendingPrank || MatchState.isPrankMode) {
                         MatchState.pendingLevelComplete = true;
                     } else {
-                        let waitTime = MatchState.pendingRewardAnim ? 1200 : 100;
+                        // 如果有展示动画，等待2.5秒再弹窗，避免盖住
+                        let waitTime = MatchState.pendingRewardAnim ? 2500 : 100;
                         setTimeout(() => this.levelComplete(), waitTime); 
                     }
                 }
@@ -795,7 +784,7 @@
                     ani = rarePool[Math.floor(Math.random() * rarePool.length)];
                     animName = 'open2';  
                 }
-
+                
                 MatchState.tempRewards.push(ani);
                 let over = document.createElement('div'); over.className='reward-dim-layer'; document.body.appendChild(over);
 
@@ -803,8 +792,10 @@
                     let poof = document.createElement('div'); poof.className='merge-poof'; poof.style.position='fixed'; poof.style.left='50%'; poof.style.top='50%'; 
                     document.body.appendChild(poof); setTimeout(()=>poof.remove(), 300);
 
+                    // 【核心纯净版展示】：直接显示静态 url 图，稳如泰山
                     let fly = document.createElement('img'); 
-                    fly.style.cssText = 'position:fixed; z-index:100000; width:150px; height:150px; object-fit:contain; left:50%; top:50%; transform:translate(-50%,-50%) scale(1.5); pointer-events:none; opacity: 1;';
+                    fly.src = ani.url;
+                    fly.style.cssText = 'position:fixed; z-index:100000; width:150px; height:150px; object-fit:contain; left:50%; top:50%; transform:translate(-50%,-50%) scale(1.5); pointer-events:none; opacity: 1; filter:drop-shadow(0 5px 10px rgba(0,0,0,0.5));';
                     document.body.appendChild(fly);
 
                     let flyUp = () => {
@@ -827,28 +818,8 @@
                         }, 500);
                     };
 
-                    // 【终极序列帧播放器】：依赖 frames 配置，最稳定！
-                    if (ani.mc && ani.mc.frames) {
-                        let cur = 1;
-                        let getFrame = (idx) => ani.mc.pad ? String(idx).padStart(ani.mc.pad, '0') : idx;
-                        
-                        fly.src = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
-                        
-                        let mcTimer = setInterval(() => {
-                            cur++;
-                            if (cur <= ani.mc.frames) {
-                                fly.src = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
-                            } else {
-                                clearInterval(mcTimer);
-                                // 播完后雷打不动停留 0.2s 然后起飞
-                                setTimeout(flyUp, 200);
-                            }
-                        }, 1000 / (ani.mc.fps || 24));
-                        
-                    } else {
-                        fly.src = ani.url;
-                        setTimeout(flyUp, 1000);
-                    }
+                    // 原地炫酷展示 1.2 秒后稳稳起飞
+                    setTimeout(flyUp, 1200);
                 };
 
                 let played = SpineManager.play(animName, showNewAnimalAction, () => {});
@@ -1181,7 +1152,7 @@
                     title.style.opacity = 0;
                     light.style.transition = 'opacity 0.3s';
                     light.style.opacity = 0;
-                    over.style.opacity = '0'; // 渐隐遮罩
+                    over.style.opacity = '0'; 
 
                     let iRect = imgBox.getBoundingClientRect();
                     imgBox.style.position = 'fixed';
