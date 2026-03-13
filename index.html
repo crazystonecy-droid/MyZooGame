@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>动物园大亨：合成变异版 (动物园比例完美适配版)</title>
+    <title>动物园大亨：合成变异版 (流畅操作与完整展示版)</title>
     <!-- 屏蔽 favicon 报错 -->
     <link rel="icon" href="data:;base64,=">
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -69,10 +69,10 @@
         .tool-cost { position: absolute; top: -10px; right: -10px; background: #f1c40f; color: #946d04; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; }
 
         /* 卡牌样式 */
-        .tile { width: 73px; height: 91px; position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); transition: filter 0.1s; cursor: pointer; z-index: 10; }
+        .tile { width: 73px; height: 91px; position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); cursor: pointer; z-index: 10; }
         .tile:active { filter: brightness(0.8) drop-shadow(1px 2px 1px rgba(0,0,0,0.3)); }
         .tile.disabled { filter: brightness(0.4) grayscale(0.5) !important; pointer-events: none !important; }
-        .tile.in-dock { position: relative !important; margin: 0; transition: transform 0.3s cubic-bezier(0.2, -0.3, 0.8, 1.2); transform: scale(0.9); filter: none; width: 13.5%; height: 80%; }
+        .tile.in-dock { position: relative !important; margin: 0; filter: none; width: 13.5%; height: 80%; }
         .tile.in-extra { position: absolute !important; transform: scale(0.8) !important; pointer-events: auto !important; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)) !important; transition: all 0.3s ease; }
 
         /* ==================== 3. 动物园 & 游客 ==================== */
@@ -87,8 +87,6 @@
         #page-habitat { background-color: #a8e6cf; display: flex; flex-direction: column; position: relative; }
 
         #global-visitor-layer { position: absolute; top: 0; left: 0; width: 300%; height: 100%; z-index: 15; pointer-events: none; }
-        
-        /* 【核心修复】：动物区高度改为占据上方 65%，游客区占下方 35% */
         #habitat-animal-area { position: absolute; top: 0; left: 0; right: 0; bottom: 35%; background-color: #b8e994; display: flex; flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; z-index: 5; scroll-behavior: smooth; cursor: grab; }
         #habitat-animal-area:active { cursor: grabbing; }
         #habitat-animal-area::-webkit-scrollbar { display: none; }
@@ -102,7 +100,6 @@
         .zone-nav-btn { position: absolute; top: 40%; transform: translateY(-50%); width: 40px; height: 40px; line-height: 40px; background: rgba(255,255,255,0.3); border-radius: 50%; text-align: center; font-size: 20px; cursor: pointer; z-index: 50; border: 2px solid rgba(255,255,255,0.6); color: #fff; transition: opacity 0.3s; }
         .zone-prev { left: 10px; display: none; } .zone-next { right: 10px; display: none; }
 
-        /* 【核心修复】：游客区高度改为 35% */
         #habitat-visitor-area { position: absolute; bottom: 0; left: 0; right: 0; height: 35%; background-color: #f5f6fa; overflow: visible; z-index: 10; border-top: 4px solid #d1d8e0; }
 
         .visitor { position: absolute; image-rendering: pixelated; transform: scale(0.6); transform-origin: bottom center; pointer-events: none; filter: drop-shadow(0 1px 0px rgba(0,0,0,0.2)); }
@@ -416,7 +413,7 @@
             
             ANIMALS: (function(){
                 let arr = [];
-                // 去除帧数限制，引擎会自动探测到不存在的图片为止
+                // 不再需要写死 frames 张数
                 arr.push({ 
                     id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal',
                     mc: { path: './mc/cat0/', suffix: '.png', fps: 12, pad: 0 } 
@@ -665,6 +662,8 @@
                     }
                 }
             },
+
+            // 【核心优化：取消硬编码延迟，实现瞬间丝滑飞行】
             clickTile(t) {
                 if(!MatchState.active || t.inDock || t.isRm || MatchState.dock.length >= 7) return;
                 if(!t.isEx) {
@@ -672,26 +671,39 @@
                     if(tops.some(top => Math.abs(top.x - t.x) < (top.w - 3) && Math.abs(top.y - t.y) < (top.h - 3))) return; 
                 }
                 AudioSys.click(); MatchState.history.push({ type: 'pick', tile: t, prev: t.isEx ? 'ex' : 'map' });
+                
+                let sR = t.el.getBoundingClientRect(); // 锁定起点绝对位置
                 t.inDock = true; t.time = Date.now(); t.isLanded = false; MatchState.dock.push(t); this.checkCover();
 
                 if(t.isEx) { 
                     t.isEx=false; MatchState.extraDock = MatchState.extraDock.filter(x=>x.id!==t.id);
                     t.el.classList.remove('in-extra'); t.el.style.position='absolute'; 
-                    let r = t.el.getBoundingClientRect(); t.el.style.left=r.left+'px'; t.el.style.top=r.top+'px'; document.body.appendChild(t.el); 
                 }
-                t.el.style.transform = 'scale(1.15)'; 
-
-                setTimeout(() => {
-                    if(!t.inDock) return;
-                    let sR = t.el.getBoundingClientRect(); t.el.classList.add('in-dock'); t.el.style.position=''; t.el.style.left=''; t.el.style.top='';
-                    MatchState.dock.sort((a,b) => (a.type===b.type) ? a.time-b.time : MatchState.dock.find(x=>x.type===a.type).time - MatchState.dock.find(x=>x.type===b.type).time);
-                    this.dockEl.appendChild(t.el); MatchState.dock.forEach((item, idx) => item.el.style.order = idx);
-                    let eR = t.el.getBoundingClientRect(); t.el.style.transition='none'; t.el.style.transform=`translate(${sR.left-eR.left}px, ${sR.top-eR.top}px)`; t.el.offsetHeight;
-                    t.el.style.transition='transform 0.3s cubic-bezier(0.2,-0.3,0.8,1.2)'; t.el.style.transform='';
-                    let ended = false;
-                    const onEnd = () => { if(ended) return; ended=true; if(!t.inDock) return; t.isLanded=true; t.el.removeEventListener('transitionend', onEnd); AudioSys.land(); this.checkMatch(); };
-                    t.el.addEventListener('transitionend', onEnd); setTimeout(onEnd, 400);
-                }, 80);
+                
+                t.el.classList.add('in-dock'); 
+                t.el.style.position=''; t.el.style.left=''; t.el.style.top='';
+                MatchState.dock.sort((a,b) => (a.type===b.type) ? a.time-b.time : MatchState.dock.find(x=>x.type===a.type).time - MatchState.dock.find(x=>x.type===b.type).time);
+                this.dockEl.appendChild(t.el); MatchState.dock.forEach((item, idx) => item.el.style.order = idx);
+                
+                let eR = t.el.getBoundingClientRect(); // 锁定终点绝对位置
+                t.el.style.transition='none'; 
+                t.el.style.transform=`translate(${sR.left-eR.left}px, ${sR.top-eR.top}px) scale(1.1)`; // 起点放大
+                t.el.offsetHeight; // 强制重排
+                
+                // 丝滑飞向槽位，时间缩短至 0.25s
+                t.el.style.transition='transform 0.25s ease-out'; 
+                t.el.style.transform=''; // 清空位移，自动飞回原本流式布局位置
+                
+                let ended = false;
+                const onEnd = () => { 
+                    if(ended) return; ended=true; 
+                    if(!t.inDock) return; 
+                    t.isLanded=true; 
+                    t.el.removeEventListener('transitionend', onEnd); 
+                    AudioSys.land(); this.checkMatch(); 
+                };
+                t.el.addEventListener('transitionend', onEnd); 
+                setTimeout(onEnd, 300); // 兜底保护
             },
             
             checkMatch() {
@@ -761,7 +773,7 @@
                     ani = rarePool[Math.floor(Math.random() * rarePool.length)];
                     animName = 'open2';  
                 }
-                
+
                 MatchState.tempRewards.push(ani);
                 let over = document.createElement('div'); over.className='reward-dim-layer'; document.body.appendChild(over);
 
@@ -773,49 +785,7 @@
                     fly.style.cssText = 'position:fixed; z-index:100000; width:150px; height:150px; object-fit:contain; left:50%; top:50%; transform:translate(-50%,-50%) scale(1.5); pointer-events:none; opacity: 1;';
                     document.body.appendChild(fly);
 
-                    // 【核心重构：无限自适应探针播放器】
-                    if (ani.mc) {
-                        let cur = 1;
-                        let getFrame = (idx) => ani.mc.pad ? String(idx).padStart(ani.mc.pad, '0') : idx;
-                        
-                        fly.src = `${ani.mc.path}${getFrame(1)}${ani.mc.suffix}`;
-                        let lastValidSrc = fly.src;
-                        let isEnd = false;
-
-                        let playNext = () => {
-                            if (fly.dataset.stopped === 'true' || isEnd) return;
-                            
-                            cur++;
-                            let trySrc = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
-                            let imgTester = new Image();
-                            
-                            imgTester.onload = () => {
-                                if (fly.dataset.stopped === 'true') return;
-                                lastValidSrc = trySrc; 
-                                fly.src = trySrc;
-                                fly.dataset.mcTimer = setTimeout(playNext, 1000 / (ani.mc.fps || 24));
-                            };
-                            
-                            imgTester.onerror = () => {
-                                isEnd = true;
-                                fly.src = lastValidSrc;
-                            };
-                            
-                            imgTester.src = trySrc; 
-                        };
-                        
-                        fly.dataset.mcTimer = setTimeout(playNext, 1000 / (ani.mc.fps || 24));
-                    } else {
-                        fly.src = ani.url;
-                    }
-
-                    setTimeout(() => {
-                        // 起飞前停止试探器，并保持当前 src
-                        fly.dataset.stopped = 'true';
-                        if(fly.dataset.mcTimer) {
-                            clearTimeout(fly.dataset.mcTimer);
-                        }
-
+                    let flyUp = () => {
                         let dR = document.getElementById('temp-dock').getBoundingClientRect();
                         let targetX = dR.left + dR.width / 2;
                         let targetY = dR.top + dR.height / 2;
@@ -830,12 +800,47 @@
                         setTimeout(() => { 
                             fly.style.opacity = '0';
                             setTimeout(() => {
-                                fly.remove(); 
-                                over.remove(); 
-                                MatchGame.updateTemp(); 
+                                fly.remove(); over.remove(); MatchGame.updateTemp(); 
                             }, 100);
                         }, 500);
-                    }, 1200);
+                    };
+
+                    // 【核心重构：智能探测图片是否存在，并在播放结束后飞走】
+                    if (ani.mc) {
+                        let cur = 1;
+                        let getFrame = (idx) => ani.mc.pad ? String(idx).padStart(ani.mc.pad, '0') : idx;
+                        
+                        fly.src = `${ani.mc.path}${getFrame(1)}${ani.mc.suffix}`;
+                        let lastValidSrc = fly.src;
+                        let isEnd = false;
+
+                        let playNext = () => {
+                            if (isEnd) return;
+                            cur++;
+                            let trySrc = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
+                            let imgTester = new Image();
+                            
+                            imgTester.onload = () => {
+                                lastValidSrc = trySrc; 
+                                fly.src = trySrc;
+                                setTimeout(playNext, 1000 / (ani.mc.fps || 24));
+                            };
+                            
+                            imgTester.onerror = () => {
+                                // 没找到图片，说明序列帧播放到头了。锁死在最后一张有效图，并延迟 300ms 后飞上去
+                                isEnd = true;
+                                fly.src = lastValidSrc;
+                                setTimeout(flyUp, 300);
+                            };
+                            
+                            imgTester.src = trySrc; 
+                        };
+                        
+                        setTimeout(playNext, 1000 / (ani.mc.fps || 24));
+                    } else {
+                        fly.src = ani.url;
+                        setTimeout(flyUp, 1200);
+                    }
                 };
 
                 let played = SpineManager.play(animName, showNewAnimalAction, () => {});
@@ -1020,18 +1025,20 @@
 
                     img.className = 'zoo-animal idle'; 
 
-                    // 【预判拦截：不够 2 只坚决不播特效】
+                    // 【核心修复防误触与预判拦截】
                     let cands = State.animals.filter(a => a.id === data.id && (a.level || 1) === (data.level || 1));
                     if (cands.length >= 2) {
                         let rect = wrap.getBoundingClientRect();
                         let cX = rect.left + rect.width / 2;
                         let cY = rect.top + rect.height / 2;
+                        // 预判通过，立马播特效
                         meagerDestroyer = SpineManager.playMeager(cX, cY);
                         wrap.classList.add('charging'); 
                     }
 
                     timer = setTimeout(() => { 
                         long = true; 
+                        // 传入是否允许合成的标志给 merge 方法
                         this.merge(data, wrap, zone, cands.length >= 2); 
                     }, 400); 
                 };
