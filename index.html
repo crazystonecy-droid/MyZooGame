@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>动物园大亨：合成变异版 (视觉平滑优化版)</title>
+    <title>动物园大亨：合成变异版 (防假死最终版)</title>
     <!-- 屏蔽 favicon 报错 -->
     <link rel="icon" href="data:;base64,=">
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -154,7 +154,6 @@
             60% { transform: translate(-50%, -50%) scale(1.5) rotate(0deg); }
         }
 
-        /* 【核心修改】添加渐隐动画效果 */
         .reward-dim-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 99998; opacity: 1; transition: opacity 0.2s ease; }
 
         .animal-wrapper.charging::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; border-radius: 50%; border: 2px solid #fff; opacity: 0; animation: chargeRing 0.8s infinite; pointer-events: none; }
@@ -395,11 +394,13 @@
                 let destroyFn = () => {
                     if(isDestroyed) return;
                     isDestroyed = true;
-                    this.app.stage.removeChild(anim);
-                    anim.destroy();
-                    if(this.app.stage.children.length === 0) {
-                        this.app.view.style.display = 'none';
-                    }
+                    try {
+                        this.app.stage.removeChild(anim);
+                        anim.destroy();
+                        if(this.app.stage.children.length === 0) {
+                            this.app.view.style.display = 'none';
+                        }
+                    } catch(e) {}
                 };
                 
                 setTimeout(destroyFn, 3500); 
@@ -416,7 +417,7 @@
                 let arr = [];
                 arr.push({ 
                     id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal',
-                    mc: { path: './mc/cat0/', suffix: '.png', fps: 12, pad: 0 } 
+                    mc: { path: './mc/cat0/', suffix: '.png', fps: 24, pad: 0 } 
                 });
                 for(let i=1; i<=20; i++) {
                     arr.push({ id: `cat${i}`, type: 'cat', baseName: '猫咪大家族', name: `特殊猫咪${i}`, url: `./img/cat${i}.png`, rarity: 'rare' });
@@ -424,7 +425,7 @@
                 
                 arr.push({ 
                     id: 'corn0', type: 'corn', baseName: '疯狂牛牛', name: '基础牛牛', url: './img/corn0.png', rarity: 'normal',
-                    mc: { path: './mc/corn0/', suffix: '.png', fps: 12, pad: 0 } 
+                    mc: { path: './mc/corn0/', suffix: '.png', fps: 24, pad: 0 } 
                 });
                 for(let i=1; i<=9; i++) {
                     arr.push({ id: `corn${i}`, type: 'corn', baseName: '疯狂牛牛', name: `特殊牛牛${i}`, url: `./img/corn${i}.png`, rarity: 'rare' });
@@ -432,7 +433,7 @@
                 
                 arr.push({ 
                     id: 'capybara0', type: 'capybara', baseName: '呆萌水豚', name: '基础水豚', url: './img/capybara0.png', rarity: 'normal',
-                    mc: { path: './mc/capybara0/', suffix: '.png', fps: 12, pad: 0 } 
+                    mc: { path: './mc/capybara0/', suffix: '.png', fps: 24, pad: 0 } 
                 });
                 for(let i=1; i<=4; i++) {
                     arr.push({ id: `capybara${i}`, type: 'capybara', baseName: '呆萌水豚', name: `特殊水豚${i}`, url: `./img/capybara${i}.png`, rarity: 'rare' });
@@ -792,7 +793,7 @@
                     ani = rarePool[Math.floor(Math.random() * rarePool.length)];
                     animName = 'open2';  
                 }
-                
+
                 MatchState.tempRewards.push(ani);
                 let over = document.createElement('div'); over.className='reward-dim-layer'; document.body.appendChild(over);
 
@@ -814,7 +815,7 @@
                         fly.style.top = targetY + 'px'; 
                         fly.style.transform = 'translate(-50%,-50%) scale(0.4)'; 
                         
-                        over.style.opacity = '0'; // 渐隐遮罩
+                        over.style.opacity = '0';
                         
                         setTimeout(() => { 
                             fly.style.opacity = '0';
@@ -824,33 +825,54 @@
                         }, 500);
                     };
 
-                    // 【核心修复】智能探针，遇到错误瞬间触发并退回上一帧停留
+                    // 【核心修改】：通过加载超时强制结束序列帧，不再依赖假死的 onload
                     if (ani.mc) {
                         let cur = 1;
                         let getFrame = (idx) => ani.mc.pad ? String(idx).padStart(ani.mc.pad, '0') : idx;
                         
-                        let lastValidSrc = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
+                        let lastValidSrc = `${ani.mc.path}${getFrame(1)}${ani.mc.suffix}`;
                         fly.src = lastValidSrc;
-                        let errorTriggered = false;
-
-                        fly.onerror = () => {
-                            if (errorTriggered) return;
-                            errorTriggered = true;
-                            fly.src = lastValidSrc; 
-                            if(fly.dataset.mcTimer) clearTimeout(fly.dataset.mcTimer);
-                            // 准确停留 200ms 后飞上天
-                            setTimeout(flyUp, 200);
-                        };
+                        let isEnd = false;
 
                         let playNext = () => {
-                            if (errorTriggered || fly.dataset.stopped === 'true') return;
+                            if (isEnd) return;
                             cur++;
-                            lastValidSrc = fly.src; 
-                            fly.src = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
-                            fly.dataset.mcTimer = setTimeout(playNext, 1000 / (ani.mc.fps || 24));
+                            let trySrc = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
+                            
+                            let imgTester = new Image();
+                            let loaded = false;
+                            
+                            // 设置最长 300ms 熔断保护，防止移动端不报错导致的卡死
+                            let failTimeout = setTimeout(() => {
+                                if (!loaded && !isEnd) {
+                                    isEnd = true;
+                                    fly.src = lastValidSrc;
+                                    setTimeout(flyUp, 200);
+                                }
+                            }, 300);
+
+                            imgTester.onload = () => {
+                                loaded = true;
+                                clearTimeout(failTimeout);
+                                if (isEnd) return;
+                                lastValidSrc = trySrc; 
+                                fly.src = trySrc;
+                                setTimeout(playNext, 1000 / (ani.mc.fps || 24));
+                            };
+                            
+                            imgTester.onerror = () => {
+                                loaded = true;
+                                clearTimeout(failTimeout);
+                                if (isEnd) return;
+                                isEnd = true;
+                                fly.src = lastValidSrc;
+                                setTimeout(flyUp, 200);
+                            };
+                            
+                            imgTester.src = trySrc; 
                         };
                         
-                        fly.dataset.mcTimer = setTimeout(playNext, 1000 / (ani.mc.fps || 24));
+                        setTimeout(playNext, 1000 / (ani.mc.fps || 24));
                     } else {
                         fly.src = ani.url;
                         setTimeout(flyUp, 1200);
@@ -1045,7 +1067,7 @@
 
                     img.className = 'zoo-animal idle'; 
 
-                    // 【核心判定：不够 2 只坚决不播特效】
+                    // 【预判拦截：只有可以合成时才播特效】
                     let cands = State.animals.filter(a => a.id === data.id && (a.level || 1) === (data.level || 1));
                     if (cands.length >= 2) {
                         let rect = wrap.getBoundingClientRect();
