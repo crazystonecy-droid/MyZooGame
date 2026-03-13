@@ -174,6 +174,19 @@
         .merge-poof { position: absolute; pointer-events: none; z-index: 1000; background: radial-gradient(circle, rgba(255,255,255,0.9), transparent 70%); transform: translate(-50%, -50%); animation: poofExpand 0.5s ease-out forwards; }
         .merge-text { position: absolute; color: #ffeb3b; font-weight: bold; font-size: 16px; text-shadow: 2px 2px 0 #000; z-index: 1001; pointer-events: none; animation: floatUp 1s ease-out forwards; white-space: nowrap; }
 
+        /* ======== 修复：金币飞行特效样式 ======== */
+        .fly-coin {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-image: url('./img/animal_coin.png');
+            background-size: cover;
+            background-position: center;
+            z-index: 100000;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
         .party-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4000; display: none; background-color: rgba(0, 0, 0, 0.3); mix-blend-mode: hard-light; background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.6) 0%, transparent 20%), radial-gradient(circle at 20% 30%, rgba(255,0,100,0.5) 0%, transparent 30%); background-size: 200% 200%; animation: discoMove 3s infinite linear alternate; }
         #game-container.party-active:not(.prank-active) .party-overlay { display: block; }
 
@@ -322,48 +335,52 @@
     </div>
 
     <script>
-        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('contextmenu', function(event) { event.preventDefault(); });
         let partyCoinTimer = null;
         let currentBookTab = ''; 
 
-        // ==================== 全局加载二次 Spine ====================
+        // ==================== 全局加载二次 Spine (修复安卓兼容性) ====================
         const SpineManager = {
             app: null, 
             spineDataOpenEgg: null, 
             spineDataMeager: null,
             isError: false,
             init() {
-                if (window.PIXI && PIXI.Sprite) {
-                    const origSet = Object.getOwnPropertyDescriptor(PIXI.Sprite.prototype, 'texture').set;
-                    Object.defineProperty(PIXI.Sprite.prototype, 'texture', {
-                        set(val) {
-                            if (!val || !val.baseTexture) { val = PIXI.Texture.EMPTY; }
-                            origSet.call(this, val);
-                        },
-                        get() { return this._texture; }
-                    });
+                try {
+                    if (window.PIXI && PIXI.Sprite) {
+                        const origSet = Object.getOwnPropertyDescriptor(PIXI.Sprite.prototype, 'texture').set;
+                        Object.defineProperty(PIXI.Sprite.prototype, 'texture', {
+                            set: function(val) {
+                                if (!val || !val.baseTexture) { val = PIXI.Texture.EMPTY; }
+                                origSet.call(this, val);
+                            },
+                            get: function() { return this._texture; }
+                        });
+                    }
+                    this.app = new PIXI.Application({ resizeTo: window, transparent: true });
+                    this.app.view.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; pointer-events:none; display:none;';
+                    document.body.appendChild(this.app.view);
+
+                    this.app.loader
+                        .add('openegg', './animation/openegg.json')
+                        .add('meager', './animation/meager.json')
+                        .load((loader, res) => {
+                            if (res.openegg && res.openegg.spineData) {
+                                this.spineDataOpenEgg = res.openegg.spineData;
+                            }
+                            if (res.meager && res.meager.spineData) {
+                                this.spineDataMeager = res.meager.spineData;
+                            }
+                        });
+                    this.app.loader.onError.add(() => { this.isError = true; });
+                } catch(e) {
+                    console.warn("PixiJS Init Failed, fallback enabled", e);
+                    this.isError = true;
                 }
-
-                this.app = new PIXI.Application({ resizeTo: window, transparent: true });
-                this.app.view.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; pointer-events:none; display:none;';
-                document.body.appendChild(this.app.view);
-
-                this.app.loader
-                    .add('openegg', './animation/openegg.json')
-                    .add('meager', './animation/meager.json')
-                    .load((loader, res) => {
-                        if (res.openegg && res.openegg.spineData) {
-                            this.spineDataOpenEgg = res.openegg.spineData;
-                        }
-                        if (res.meager && res.meager.spineData) {
-                            this.spineDataMeager = res.meager.spineData;
-                        }
-                    });
-                this.app.loader.onError.add(() => { this.isError = true; });
             },
             
             play(animName, onMiddle, onComplete) {
-                if (!this.spineDataOpenEgg) return false;
+                if (!this.spineDataOpenEgg || !this.app) return false;
                 this.app.view.style.display = 'block';
                 const anim = new PIXI.spine.Spine(this.spineDataOpenEgg);
                 anim.x = window.innerWidth / 2;
@@ -389,7 +406,7 @@
             },
 
             playMeager(x, y) {
-                if (!this.spineDataMeager) return null;
+                if (!this.spineDataMeager || !this.app) return null;
                 
                 this.app.view.style.display = 'block';
                 const anim = new PIXI.spine.Spine(this.spineDataMeager);
@@ -471,7 +488,9 @@
             bgmPause() { this.bgm.pause(); },
             land() {}, heavy() {}, sweep() {}, match() {}, win() {}, jump() {}
         };
+        // 修复微信内音频初始化
         window.addEventListener('click', () => AudioSys.init(), { once: true });
+        document.addEventListener("WeixinJSBridgeReady", function () { AudioSys.init(); }, false);
 
         // ==================== 3. 状态与存储 ====================
         let State = { coins: 0, animals:[], level: 1, habitatLevels: {}, trashCount: 0 };
@@ -484,7 +503,7 @@
                     State = JSON.parse(save);
                     const validIds = Config.ANIMALS.map(a=>a.id);
                     if(State.animals) {
-                        State.animals = State.animals.filter(a=>validIds.includes(a.id)).map(a => {
+                        State.animals = State.animals.filter(a => validIds.indexOf(a.id) !== -1).map(a => {
                             if(!a.type) {
                                 let conf = Config.ANIMALS.find(c => c.id === a.id);
                                 if(conf) { a.type = conf.type; a.baseName = conf.baseName; }
@@ -518,7 +537,8 @@
                 tabsContainer.innerHTML = '';
                 contentContainer.innerHTML = '';
 
-                const owned = new Set(State.animals.map(a=>a.id));
+                let ownedIds =[];
+                State.animals.forEach(a => ownedIds.push(a.id));
 
                 let groups = {};
                 Config.ANIMALS.forEach(ani => {
@@ -538,7 +558,7 @@
 
                 types.forEach(t => {
                     let group = groups[t];
-                    let ownedCount = group.list.filter(a => owned.has(a.id)).length;
+                    let ownedCount = group.list.filter(a => ownedIds.indexOf(a.id) !== -1).length;
                     
                     let tab = document.createElement('div');
                     tab.className = `book-tab ${t === currentBookTab ? 'active' : ''}`;
@@ -554,8 +574,8 @@
                 let activeGroup = groups[currentBookTab];
                 if (activeGroup) {
                     activeGroup.list.forEach(ani => {
-                        const isOwned = owned.has(ani.id);
-                        const rarityText = ani.rarity==='rare' ? '特殊' : '基础';
+                        const isOwned = ownedIds.indexOf(ani.id) !== -1;
+                        const rarityText = ani.rarity === 'rare' ? '特殊' : '基础';
                         
                         const html = `
                             <div class="book-item ${isOwned ? '' : 'locked'}">
@@ -585,12 +605,10 @@
                 this.generateLevel(State.level); this.checkCover();
             },
 
-            // ================= 修复版地图生成算法 =================
             generateLevel(level) {
                 const mapHeight = this.mapEl.clientHeight || 500;
                 const mapWidth = this.mapEl.clientWidth || 360;
                 
-                // 1. 更智能的动态缩放，防止在微信小屏幕或特殊比例屏幕上越界
                 let scale = Math.min(1.1, mapWidth / 360, mapHeight / 550); 
                 
                 const W = 73 * scale, H = 91 * scale;
@@ -643,7 +661,6 @@
                     let botX = CX - ((botC-1)*(W*0.85))/2;
                     let botY = CY + (layers * H * 0.4) + 60 * scale;
                     
-                    // 2. 关键修复：添加安全检测，防止底部牌组在微信端超出屏幕下边界被 hidden
                     if (botY + H > mapHeight - 10) { 
                         botY = mapHeight - H - 10; 
                     }
@@ -671,12 +688,10 @@
                 for (let i = 0; i < types.length; i += chunkSize) {
                     let chunk = types.slice(i, i + chunkSize);
                     chunk.sort(() => Math.random() - 0.5);
-                    shuffledTypes.push(...chunk);
+                    chunk.forEach(function(item) { shuffledTypes.push(item); });
                 }
                 types = shuffledTypes;
                 
-                // 3. 关键修复：大幅度降低第四关及以后的全局乱序概率 (从20%降至极低)
-                // 这样能保证底层被覆盖的牌总是有成对解，避免“羊了个羊式死局”卡死玩家
                 let swapChance = level < 4 ? 0.1 : 0.01; 
                 for(let i=0; i<types.length; i++){
                     if(Math.random() < swapChance){
@@ -717,7 +732,12 @@
                 if(!t.isEx) {
                     let tops = MatchState.tiles.filter(a => a.id!==t.id && !a.inDock && !a.isRm && !a.isEx && a.l > t.l);
                     let hitW = t.w * 0.65; let hitH = t.h * 0.65;
-                    if(tops.some(top => Math.abs(top.x - t.x) < hitW && Math.abs(top.y - t.y) < hitH)) return; 
+                    let hasCover = false;
+                    for (let idx=0; idx<tops.length; idx++) {
+                        let top = tops[idx];
+                        if (Math.abs(top.x - t.x) < hitW && Math.abs(top.y - t.y) < hitH) { hasCover = true; break; }
+                    }
+                    if (hasCover) return; 
                 }
                 AudioSys.click(); MatchState.history.push({ type: 'pick', tile: t, prev: t.isEx ? 'ex' : 'map' });
                 
@@ -772,7 +792,7 @@
                     let cR = list[1].el.getBoundingClientRect(), sX = cR.left+cR.width/2, sY = cR.top+cR.height/2;
                     
                     list.forEach(t => { t.isRemoving=true; t.isRm=true; });
-                    MatchState.dock = MatchState.dock.filter(t => !list.includes(t)); 
+                    MatchState.dock = MatchState.dock.filter(t => list.indexOf(t) === -1); 
                     MatchState.dock.forEach((item, i) => item.el.style.order = i); 
                     this.checkCover();
 
@@ -783,12 +803,22 @@
                     let isLastMatch = (MatchState.tiles.filter(t=>!t.inDock&&!t.isEx&&!t.isRm).length===0 && MatchState.dock.filter(t=>!t.isRemoving).length===0 && MatchState.extraDock.length===0);
                     let rand = Math.random();
 
-                    if(rand < 0.2) { 
+                    // ================= 修复：修改掉率并增加连串金币特效 =================
+                    if (rand < 0.10) { 
+                        // 10% 概率掉落精灵球
                         this.triggerAniReward(isLastMatch); 
-                    } else if (rand < 0.26) { 
+                    } else if (rand < 0.16) { 
+                        // 6% 概率触发捣乱垃圾
                         this.triggerTrashReward(isLastMatch); 
                     } else { 
-                        EventSystem.flyCoin(10, sX-12, sY-12, false); 
+                        // 84% 概率爆金币（这里连飞3个视觉金币，总计给 10 个金币）
+                        let coinAmts = [4, 3, 3];
+                        for (let i = 0; i < 3; i++) {
+                            setTimeout(() => {
+                                EventSystem.flyCoin(coinAmts[i], sX - 15 + (Math.random()-0.5)*40, sY - 15 + (Math.random()-0.5)*40, false); 
+                            }, i * 150);
+                        }
+                        
                         if (isLastMatch) {
                             MatchState.active = false;
                             setTimeout(() => this.levelComplete(), 500);
@@ -827,7 +857,6 @@
                     let poof = document.createElement('div'); poof.className='merge-poof'; poof.style.position='fixed'; poof.style.left='50%'; poof.style.top='50%'; 
                     document.body.appendChild(poof); setTimeout(()=>poof.remove(), 300);
 
-                    // 直接使用静态原图
                     let fly = document.createElement('img'); 
                     fly.src = ani.url;
                     fly.style.cssText = 'position:fixed; z-index:100000; width:150px; height:150px; object-fit:contain; left:50%; top:50%; transform:translate(-50%,-50%) scale(1.5); pointer-events:none; opacity: 1; filter:drop-shadow(0 5px 10px rgba(0,0,0,0.5));';
@@ -854,7 +883,6 @@
                         }, 500);
                     };
 
-                    // 单图完美展示 1.2 秒后起飞
                     setTimeout(flyUp, 1200);
                 };
 
@@ -906,7 +934,10 @@
                 MatchState.active=false; State.level++;
                 let rd = document.getElementById('result-rewards-display'); rd.innerHTML='';
                 if(MatchState.tempRewards.length > 0) {
-                    State.animals.push(...MatchState.tempRewards.map(a => ({...a, uuid: Date.now()+Math.random(), level: 1})));
+                    MatchState.tempRewards.forEach(a => {
+                        // 修复：替换 {...a} 兼容低版本微信安卓机
+                        State.animals.push(Object.assign({}, a, {uuid: Date.now()+Math.random(), level: 1}));
+                    });
                     document.getElementById('result-title').innerText = "📦 本关收获";
                     rd.innerHTML = MatchState.tempRewards.map(a => `<div class="reward-pop" style="margin:10px;text-align:center;"><img src="${a.url}" style="width:80px;height:80px;"><div style="color:#f1c40f;font-weight:bold;">${a.name}</div></div>`).join('');
                 } else {
@@ -928,7 +959,7 @@
                     t.inDock=false; t.isLanded=false; t.isEx=true; MatchState.extraDock.push(t); t.el.classList.remove('in-dock'); t.el.classList.add('in-extra');
                     t.el.style.left = (10+(bIdx+i)%3*55)+'px'; t.el.style.top = (25-Math.floor((bIdx+i)/3)*20)+'px'; t.el.style.zIndex = 100+bIdx+i; this.dockEl.removeChild(t.el); this.exDockEl.appendChild(t.el);
                 });
-                MatchState.dock = MatchState.dock.filter(t=>!list.includes(t)); MatchState.dock.forEach((item, idx) => item.el.style.order=idx); this.checkCover();
+                MatchState.dock = MatchState.dock.filter(t => list.indexOf(t) === -1); MatchState.dock.forEach((item, idx) => item.el.style.order=idx); this.checkCover();
             },
             toolUndo() {
                 if(!MatchState.active || MatchState.history.length===0) return; if(State.coins < 20) { UI.toast("金币不足!"); return; }
@@ -987,7 +1018,10 @@
             renderHabitat() {
                 this.area.innerHTML = ''; currentZooAnimals =[]; 
                 
-                let uniques =[...new Set(State.animals.map(a=>a.type || 'cat'))];
+                let uniqueMap = {};
+                State.animals.forEach(a => { uniqueMap[a.type || 'cat'] = true; });
+                let uniques = Object.keys(uniqueMap);
+
                 if(uniques.length === 0) {
                     this.area.innerHTML = '<div style="width:100%;height:100%;display:flex;justify-content:center;align-items:center;color:#5d4037;font-size:20px;">空荡荡的...去拆快递吧！</div>';
                     this.updateUI(); return;
@@ -1118,24 +1152,28 @@
 
                 setTimeout(() => {
                     let cands = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1));
-                    State.animals = State.animals.filter(a=>!cands.map(x=>x.uuid).includes(a.uuid));
+                    let candsUuids =[]; cands.forEach(x => candsUuids.push(x.uuid));
+                    State.animals = State.animals.filter(a => candsUuids.indexOf(a.uuid) === -1);
                     
                     let lv = (data.level||1) + (cands.length>=8?3:cands.length>=4?2:1);
                     let newAni;
 
-                    let isBaseForm = Config.ANIMALS.find(a => a.id === data.id)?.rarity === 'normal';
+                    // 修复：不使用 ?. 和 {...}
+                    let isBaseForm = false;
+                    let baseConfig = Config.ANIMALS.find(a => a.id === data.id);
+                    if (baseConfig && baseConfig.rarity === 'normal') isBaseForm = true;
 
                     if (isBaseForm) {
                         let specialCandidates = Config.ANIMALS.filter(a => a.type === data.type && a.rarity === 'rare');
                         if (specialCandidates.length > 0) {
                             let specialData = specialCandidates[Math.floor(Math.random() * specialCandidates.length)];
-                            newAni = {...specialData, level: 1, uuid: Date.now()+Math.random()};
+                            newAni = Object.assign({}, specialData, {level: 1, uuid: Date.now()+Math.random()});
                             lv = 1; 
                         } else {
-                            newAni = {...data, level: lv, uuid: Date.now()+Math.random()};
+                            newAni = Object.assign({}, data, {level: lv, uuid: Date.now()+Math.random()});
                         }
                     } else {
-                        newAni = {...data, level: lv, uuid: Date.now()+Math.random()};
+                        newAni = Object.assign({}, data, {level: lv, uuid: Date.now()+Math.random()});
                     }
 
                     State.animals.push(newAni); Storage.save(); 
@@ -1249,7 +1287,6 @@
                 let z = zs[idx], tid = z.dataset.type, hLv = State.habitatLevels[tid]||1;
                 
                 let anis = State.animals.filter(a=>(a.type||'cat') === tid);
-                let maxL = Math.max(1, ...anis.map(a=>a.level||1));
                 
                 let repAni = anis.reduce((max, obj) => {
                     let s1 = (obj.rarity === 'rare' ? 1000 : 0) + (obj.level || 1);
@@ -1268,13 +1305,18 @@
                 document.querySelector('.upgrade-cost').innerHTML = `<img src="./img/animal_coin.png" style="width:12px;height:12px;margin-right:2px;"> ${hLv*500}`;
                 document.getElementById('info-level-fill').style.width = `${(hLv%10)*10}%`;
 
-                let prof = 0; anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*(a.level||1)**2));
+                // 修复：不使用 ** 运算符
+                let prof = 0; anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*Math.pow(a.level||1, 2)));
                 document.querySelector('.info-profit').innerHTML = `${prof.toFixed(1)} <img src="./img/animal_coin.png" style="width:12px;height:12px;">/分钟`;
 
                 document.querySelector('.zone-prev').style.display = idx===0?'none':'block'; document.querySelector('.zone-next').style.display = idx===zs.length-1?'none':'block';
                 this.area.dataset.tid = tid; this.area.dataset.cost = hLv*500;
             },
-            scrollZone(dir) { this.area.scrollBy({left: dir * (this.area.firstElementChild?.offsetWidth||this.area.offsetWidth), behavior:'smooth'}); setTimeout(()=>this.updateUI(), 350); },
+            scrollZone(dir) { 
+                let scrollAmt = dir * (this.area.firstElementChild ? this.area.firstElementChild.offsetWidth : this.area.offsetWidth);
+                this.area.scrollBy({left: scrollAmt, behavior:'smooth'}); 
+                setTimeout(()=>this.updateUI(), 350); 
+            },
 
             initVisitors() {
                 visitors.forEach(v=>{clearTimeout(v.timer); if(v.el.parentNode) v.el.parentNode.removeChild(v.el);}); visitors=[];
@@ -1294,7 +1336,7 @@
                     l.appendChild(v.el); visitors.push(v); this.visAI(v, w, h);
                 }
             },
-          visAI(v, w, h) {
+            visAI(v, w, h) {
                 if(Math.random()<0.3) { 
                     v.el.className='visitor'; 
                     v.timer=setTimeout(()=>this.visAI(v,w,h), 1000+Math.random()*2000); 
@@ -1305,7 +1347,7 @@
                     let dur = Math.max(1000, Math.hypot(tX-v.x, tY-v.y)/60*1000);
 
                     requestAnimationFrame(() => {
-                        v.el.classList.toggle('face-left', tX < v.x); 
+                        if (tX < v.x) { v.el.classList.add('face-left'); } else { v.el.classList.remove('face-left'); }
                         v.el.style.transition = `left ${dur}ms linear, top ${dur}ms linear`;
                         v.el.style.left=tX+'px'; v.el.style.top=tY+'px'; v.el.style.zIndex=Math.floor(tY); 
                         v.x=tX; v.y=tY;
@@ -1345,7 +1387,7 @@
         scroller.addEventListener('scroll', () => ZooSystem.updateUI());
         habArea.addEventListener('scroll', () => ZooSystem.updateUI());
 
-        // ==================== 7. 事件与玩法(捣乱、派对等) ====================
+        // ==================== 7. 事件与玩法(捣乱、派单等) ====================
         const EventSystem = {
             triggerPanic(threatX) {
                 visitors.forEach(v => {
@@ -1427,7 +1469,10 @@
                 let gc = document.getElementById('game-container'); gc.classList.add('party-active'); AudioSys.bgmPlay();
                 if(partyCoinTimer) clearInterval(partyCoinTimer);
                 partyCoinTimer = setInterval(()=>{
-                    if(MatchState.isPrankMode) return; let ts = Array.from(document.querySelectorAll('.visitor')); if(ts.length===0) return;
+                    if(MatchState.isPrankMode) return; 
+                    let tsArray = document.querySelectorAll('.visitor'); 
+                    if(tsArray.length===0) return;
+                    let ts =[]; for(let i=0; i<tsArray.length; i++) ts.push(tsArray[i]);
                     let lucky = ts[Math.floor(Math.random()*ts.length)], r = lucky.getBoundingClientRect();
                     this.flyCoin(1, r.left+r.width/2, r.top+r.height/2, true);
                 }, 600);
@@ -1444,9 +1489,13 @@
 
         setInterval(() => {
             if (State.animals.length===0 || State.trashCount>0) return;
-            let prof = 0;[...new Set(State.animals.map(a=>a.type||'cat'))].forEach(tid => {
+            let prof = 0;
+            let uniqueTypes = {};
+            State.animals.forEach(function(a) { uniqueTypes[a.type||'cat'] = true; });
+            
+            Object.keys(uniqueTypes).forEach(tid => {
                 let anis = State.animals.filter(a=>(a.type||'cat')===tid), hLv = State.habitatLevels[tid]||1;
-                anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*(a.level||1)**2));
+                anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*Math.pow(a.level||1, 2)));
             });
             State.coins += prof/12;
             if (Math.floor(State.coins) !== parseInt(document.getElementById('zoo-coin-count').innerText)) Storage.save();
