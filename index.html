@@ -424,13 +424,12 @@
         };
 
         // ==================== 1. 配置与数据 ====================
-        // 【核心修改：彻底移除序列帧 mc 属性配置】
         const Config = {
             BOXES:['./img/box1.png', './img/box2.png', './img/box3.png', './img/box4.png', './img/box5.png', './img/box6.png', './img/box7.png', './img/box8.png'],
             BALLS:['./img/pokeball1.png', './img/pokeball2.png', './img/pokeball3.png', './img/pokeball4.png'],
             
             ANIMALS: (function(){
-                let arr = [];
+                let arr =[];
                 arr.push({ id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal' });
                 for(let i=1; i<=20; i++) {
                     arr.push({ id: `cat${i}`, type: 'cat', baseName: '猫咪大家族', name: `特殊猫咪${i}`, url: `./img/cat${i}.png`, rarity: 'rare' });
@@ -586,16 +585,19 @@
                 this.generateLevel(State.level); this.checkCover();
             },
 
+            // ================= 修复版地图生成算法 =================
             generateLevel(level) {
                 const mapHeight = this.mapEl.clientHeight || 500;
-                let scale = 1;
-                if (mapHeight < 480) scale = 0.85; 
+                const mapWidth = this.mapEl.clientWidth || 360;
+                
+                // 1. 更智能的动态缩放，防止在微信小屏幕或特殊比例屏幕上越界
+                let scale = Math.min(1.1, mapWidth / 360, mapHeight / 550); 
                 
                 const W = 73 * scale, H = 91 * scale;
-                const C_W = this.mapEl.clientWidth || 360;
+                const C_W = mapWidth;
                 const CX = C_W / 2 - W / 2;
-                const CY = Math.max(100, mapHeight * 0.25); 
-                let configs = [];
+                const CY = Math.max(60, mapHeight * 0.22); 
+                let configs =[];
 
                 if (level === 1) { 
                     for(let r=0; r<3; r++) for(let c=0; c<3; c++) configs.push({x:CX+(c-1)*75*scale, y:CY+(r-1)*95*scale, l:0});
@@ -612,6 +614,7 @@
                     let effLevel = Math.max(1, level - 2);
                     let layers = 4 + Math.min(Math.floor(effLevel/2), 4);
                     let colOff = W * 0.55; let rowOff = H * 0.55;
+                    
                     for (let l=0; l<layers; l++) {
                         let size = layers - l; let sX = CX - ((size-1) * colOff / 2); let sY = CY - ((size-1) * rowOff / 2) + 10;
                         for (let r=0; r<size; r++) {
@@ -621,6 +624,7 @@
                             }
                         }
                     }
+                    
                     let sideL = 2 + Math.min(Math.floor(effLevel/2), 3);
                     for (let l=0; l<sideL; l++) {
                         for(let r=0; r<4; r++) { 
@@ -628,13 +632,27 @@
                             configs.push({ x: C_W - W - 5 - l*2, y: CY - 30 + r * H * 0.45 - l*2, l: l });
                         }
                     }
+                    
                     let blindC = 6 + Math.min(effLevel*2, 14);
                     for(let i=0; i<blindC; i++) {
-                        configs.push({ x: 25+i*3, y: 70, l: i }); configs.push({ x: C_W-W-25-i*3, y: 70, l: i });
+                        configs.push({ x: 25+i*3, y: 70 * scale, l: i }); 
+                        configs.push({ x: C_W-W-25-i*3, y: 70 * scale, l: i });
                     }
+                    
                     let botC = 3 + Math.min(Math.floor(effLevel/2), 3);
-                    let botX = CX - ((botC-1)*(W*0.85))/2, botY = CY + (layers * H * 0.4) + 60;
-                    for(let i=0; i<botC; i++) for(let l=0; l<2; l++) configs.push({ x: botX+i*(W*0.85), y: botY+l*8, l: l });
+                    let botX = CX - ((botC-1)*(W*0.85))/2;
+                    let botY = CY + (layers * H * 0.4) + 60 * scale;
+                    
+                    // 2. 关键修复：添加安全检测，防止底部牌组在微信端超出屏幕下边界被 hidden
+                    if (botY + H > mapHeight - 10) { 
+                        botY = mapHeight - H - 10; 
+                    }
+                    
+                    for(let i=0; i<botC; i++) {
+                        for(let l=0; l<2; l++) {
+                            configs.push({ x: botX+i*(W*0.85), y: botY+l*8, l: l });
+                        }
+                    }
                 }
 
                 let rem = configs.length % 3; if(rem !== 0) configs.splice(configs.length-rem, rem);
@@ -648,7 +666,7 @@
                 let types =[]; 
                 for(let i=0; i<configs.length/3; i++) { let t = i%typeC; types.push(t,t,t); }
                 
-                let shuffledTypes = [];
+                let shuffledTypes =[];
                 let chunkSize = typeC * 3; 
                 for (let i = 0; i < types.length; i += chunkSize) {
                     let chunk = types.slice(i, i + chunkSize);
@@ -657,8 +675,11 @@
                 }
                 types = shuffledTypes;
                 
+                // 3. 关键修复：大幅度降低第四关及以后的全局乱序概率 (从20%降至极低)
+                // 这样能保证底层被覆盖的牌总是有成对解，避免“羊了个羊式死局”卡死玩家
+                let swapChance = level < 4 ? 0.1 : 0.01; 
                 for(let i=0; i<types.length; i++){
-                    if(Math.random()<0.2){
+                    if(Math.random() < swapChance){
                         let r = Math.floor(Math.random()*types.length);
                         let temp = types[i]; types[i] = types[r]; types[r] = temp;
                     }
@@ -785,7 +806,6 @@
                 }
             },
 
-            // 【核心重构：纯净单图展示版，告别一切序列帧 BUG】
             triggerAniReward(isLastMatch) {
                 let rand = Math.random();
                 let ani, animName;
@@ -1424,8 +1444,7 @@
 
         setInterval(() => {
             if (State.animals.length===0 || State.trashCount>0) return;
-            let prof = 0;
-            [...new Set(State.animals.map(a=>a.type||'cat'))].forEach(tid => {
+            let prof = 0;[...new Set(State.animals.map(a=>a.type||'cat'))].forEach(tid => {
                 let anis = State.animals.filter(a=>(a.type||'cat')===tid), hLv = State.habitatLevels[tid]||1;
                 anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*(a.level||1)**2));
             });
