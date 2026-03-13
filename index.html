@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>动物园大亨：合成变异版 (流畅操作与完整展示版)</title>
+    <title>动物园大亨：合成变异版 (真·绝对帧率不拖沓版)</title>
     <!-- 屏蔽 favicon 报错 -->
     <link rel="icon" href="data:;base64,=">
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -69,10 +69,10 @@
         .tool-cost { position: absolute; top: -10px; right: -10px; background: #f1c40f; color: #946d04; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; }
 
         /* 卡牌样式 */
-        .tile { width: 73px; height: 91px; position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); cursor: pointer; z-index: 10; }
+        .tile { width: 73px; height: 91px; position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); transition: filter 0.1s; cursor: pointer; z-index: 10; }
         .tile:active { filter: brightness(0.8) drop-shadow(1px 2px 1px rgba(0,0,0,0.3)); }
         .tile.disabled { filter: brightness(0.4) grayscale(0.5) !important; pointer-events: none !important; }
-        .tile.in-dock { position: relative !important; margin: 0; filter: none; width: 13.5%; height: 80%; }
+        .tile.in-dock { position: relative !important; margin: 0; transition: transform 0.3s cubic-bezier(0.2, -0.3, 0.8, 1.2); transform: scale(0.9); filter: none; width: 13.5%; height: 80%; }
         .tile.in-extra { position: absolute !important; transform: scale(0.8) !important; pointer-events: auto !important; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)) !important; transition: all 0.3s ease; }
 
         /* ==================== 3. 动物园 & 游客 ==================== */
@@ -413,10 +413,10 @@
             
             ANIMALS: (function(){
                 let arr = [];
-                // 不再需要写死 frames 张数
+                // 去除帧数限制，引擎会自动探测到不存在的图片为止
                 arr.push({ 
                     id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal',
-                    mc: { path: './mc/cat0/', suffix: '.png', fps: 12, pad: 0 } 
+                    mc: { path: './mc/cat0/', suffix: '.png', fps: 24, pad: 0 } 
                 });
                 for(let i=1; i<=20; i++) {
                     arr.push({ id: `cat${i}`, type: 'cat', baseName: '猫咪大家族', name: `特殊猫咪${i}`, url: `./img/cat${i}.png`, rarity: 'rare' });
@@ -424,7 +424,7 @@
                 
                 arr.push({ 
                     id: 'corn0', type: 'corn', baseName: '疯狂牛牛', name: '基础牛牛', url: './img/corn0.png', rarity: 'normal',
-                    mc: { path: './mc/corn0/', suffix: '.png', fps: 12, pad: 0 } 
+                    mc: { path: './mc/corn0/', suffix: '.png', fps: 24, pad: 0 } 
                 });
                 for(let i=1; i<=9; i++) {
                     arr.push({ id: `corn${i}`, type: 'corn', baseName: '疯狂牛牛', name: `特殊牛牛${i}`, url: `./img/corn${i}.png`, rarity: 'rare' });
@@ -432,7 +432,7 @@
                 
                 arr.push({ 
                     id: 'capybara0', type: 'capybara', baseName: '呆萌水豚', name: '基础水豚', url: './img/capybara0.png', rarity: 'normal',
-                    mc: { path: './mc/capybara0/', suffix: '.png', fps: 12, pad: 0 } 
+                    mc: { path: './mc/capybara0/', suffix: '.png', fps: 24, pad: 0 } 
                 });
                 for(let i=1; i<=4; i++) {
                     arr.push({ id: `capybara${i}`, type: 'capybara', baseName: '呆萌水豚', name: `特殊水豚${i}`, url: `./img/capybara${i}.png`, rarity: 'rare' });
@@ -662,8 +662,6 @@
                     }
                 }
             },
-
-            // 【核心优化：取消硬编码延迟，实现瞬间丝滑飞行】
             clickTile(t) {
                 if(!MatchState.active || t.inDock || t.isRm || MatchState.dock.length >= 7) return;
                 if(!t.isEx) {
@@ -672,7 +670,7 @@
                 }
                 AudioSys.click(); MatchState.history.push({ type: 'pick', tile: t, prev: t.isEx ? 'ex' : 'map' });
                 
-                let sR = t.el.getBoundingClientRect(); // 锁定起点绝对位置
+                let sR = t.el.getBoundingClientRect(); 
                 t.inDock = true; t.time = Date.now(); t.isLanded = false; MatchState.dock.push(t); this.checkCover();
 
                 if(t.isEx) { 
@@ -685,14 +683,13 @@
                 MatchState.dock.sort((a,b) => (a.type===b.type) ? a.time-b.time : MatchState.dock.find(x=>x.type===a.type).time - MatchState.dock.find(x=>x.type===b.type).time);
                 this.dockEl.appendChild(t.el); MatchState.dock.forEach((item, idx) => item.el.style.order = idx);
                 
-                let eR = t.el.getBoundingClientRect(); // 锁定终点绝对位置
+                let eR = t.el.getBoundingClientRect(); 
                 t.el.style.transition='none'; 
-                t.el.style.transform=`translate(${sR.left-eR.left}px, ${sR.top-eR.top}px) scale(1.1)`; // 起点放大
-                t.el.offsetHeight; // 强制重排
+                t.el.style.transform=`translate(${sR.left-eR.left}px, ${sR.top-eR.top}px) scale(1.1)`; 
+                t.el.offsetHeight; 
                 
-                // 丝滑飞向槽位，时间缩短至 0.25s
                 t.el.style.transition='transform 0.25s ease-out'; 
-                t.el.style.transform=''; // 清空位移，自动飞回原本流式布局位置
+                t.el.style.transform=''; 
                 
                 let ended = false;
                 const onEnd = () => { 
@@ -703,7 +700,7 @@
                     AudioSys.land(); this.checkMatch(); 
                 };
                 t.el.addEventListener('transitionend', onEnd); 
-                setTimeout(onEnd, 300); // 兜底保护
+                setTimeout(onEnd, 300); 
             },
             
             checkMatch() {
@@ -805,39 +802,49 @@
                         }, 500);
                     };
 
-                    // 【核心重构：智能探测图片是否存在，并在播放结束后飞走】
+                    // 【核心重构：绝对帧率智能探索引擎】
                     if (ani.mc) {
                         let cur = 1;
                         let getFrame = (idx) => ani.mc.pad ? String(idx).padStart(ani.mc.pad, '0') : idx;
                         
-                        fly.src = `${ani.mc.path}${getFrame(1)}${ani.mc.suffix}`;
-                        let lastValidSrc = fly.src;
+                        // 初始化第一帧
+                        let lastValidSrc = `${ani.mc.path}${getFrame(1)}${ani.mc.suffix}`;
+                        fly.src = lastValidSrc;
                         let isEnd = false;
+                        let intervalMs = 1000 / (ani.mc.fps || 24);
 
-                        let playNext = () => {
-                            if (isEnd) return;
+                        // 使用绝对时间轴的 setInterval
+                        let mcTimer = setInterval(() => {
+                            if (fly.dataset.stopped === 'true' || isEnd) {
+                                clearInterval(mcTimer);
+                                return;
+                            }
+                            
                             cur++;
                             let trySrc = `${ani.mc.path}${getFrame(cur)}${ani.mc.suffix}`;
                             let imgTester = new Image();
                             
                             imgTester.onload = () => {
-                                lastValidSrc = trySrc; 
+                                if (fly.dataset.stopped === 'true') return;
+                                lastValidSrc = trySrc; // 确认图片存在，更新最后有效图
                                 fly.src = trySrc;
-                                setTimeout(playNext, 1000 / (ani.mc.fps || 24));
                             };
                             
                             imgTester.onerror = () => {
-                                // 没找到图片，说明序列帧播放到头了。锁死在最后一张有效图，并延迟 300ms 后飞上去
+                                // 探索到头了，锁定图片
                                 isEnd = true;
+                                clearInterval(mcTimer);
                                 fly.src = lastValidSrc;
+                                // 稍微停顿一下给玩家看清楚，然后起飞
                                 setTimeout(flyUp, 300);
                             };
                             
                             imgTester.src = trySrc; 
-                        };
+                        }, intervalMs);
                         
-                        setTimeout(playNext, 1000 / (ani.mc.fps || 24));
+                        fly.dataset.mcTimer = mcTimer;
                     } else {
+                        // 如果没有配序列帧，默认展示 1.2 秒后起飞
                         fly.src = ani.url;
                         setTimeout(flyUp, 1200);
                     }
@@ -1025,20 +1032,18 @@
 
                     img.className = 'zoo-animal idle'; 
 
-                    // 【核心修复防误触与预判拦截】
+                    // 【核心判定：不够 2 只坚决不播特效】
                     let cands = State.animals.filter(a => a.id === data.id && (a.level || 1) === (data.level || 1));
                     if (cands.length >= 2) {
                         let rect = wrap.getBoundingClientRect();
                         let cX = rect.left + rect.width / 2;
                         let cY = rect.top + rect.height / 2;
-                        // 预判通过，立马播特效
                         meagerDestroyer = SpineManager.playMeager(cX, cY);
                         wrap.classList.add('charging'); 
                     }
 
                     timer = setTimeout(() => { 
                         long = true; 
-                        // 传入是否允许合成的标志给 merge 方法
                         this.merge(data, wrap, zone, cands.length >= 2); 
                     }, 400); 
                 };
@@ -1087,16 +1092,16 @@
                     tip.style.left = tWrap.style.left; tip.style.top = tWrap.style.top; zone.appendChild(tip); setTimeout(() => tip.remove(), 1000);
                     return; 
                 }
-
-                let cands = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1));
+                
                 let tX = parseFloat(tWrap.style.left), tY = parseFloat(tWrap.style.top);
-                let partners = cands.filter(a=>a.uuid!==data.uuid);
+                let partners = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1)).filter(a=>a.uuid!==data.uuid);
                 partners.forEach(p => {
                     let w = zone.querySelector(`.animal-wrapper[data-uuid='${p.uuid}']`);
                     if(w) { w.style.transition=`all 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53)`; w.style.left=tX+'px'; w.style.top=tY+'px'; w.style.transform='scale(0.1) rotate(90deg)'; w.style.opacity=0; }
                 });
 
                 setTimeout(() => {
+                    let cands = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1));
                     State.animals = State.animals.filter(a=>!cands.map(x=>x.uuid).includes(a.uuid));
                     
                     let lv = (data.level||1) + (cands.length>=8?3:cands.length>=4?2:1);
