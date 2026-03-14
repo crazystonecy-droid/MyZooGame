@@ -23,14 +23,14 @@
             user-select: none !important;
             outline: none !important;
         }
-        
+
         img {
             -webkit-user-drag: none;
             pointer-events: none;
         }
 
         html, body { width: 100%; height: 100%; margin: 0; padding: 0; position: fixed; overflow: hidden; overscroll-behavior: none; background-color: #2c3e50; font-family: "Microsoft YaHei", sans-serif; display: flex; justify-content: center; align-items: center; }
-        
+
         #game-container { 
             width: 100%; 
             height: 100%; 
@@ -44,7 +44,7 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.5); 
             padding-bottom: env(safe-area-inset-bottom, 0px); 
         }
-        
+
         @media (min-aspect-ratio: 3/4) { 
             #game-container { 
                 height: 94%; 
@@ -56,15 +56,20 @@
                 margin: auto; 
             } 
         }
-        
+       
         .btn { padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: all 0.1s; font-size: 14px; display: flex; align-items: center; gap: 5px; pointer-events: auto; }
         .btn:active { transform: translateY(4px); box-shadow: none; }
-        .btn-blue { background: #3498db; } .btn-green { background: #2ecc71; } .btn-orange { background: #f39c12; } .btn-red { background: #e74c3c; }
+        .btn-blue { background: #3498db; } .btn-green { background: #2ecc71; } .btn-orange { background: #f39c12; } .btn-red { background: #e74c3c; } .btn-purple { background: #9b59b6; }
 
         /* ==================== 2. 消除界面 ==================== */
         #game-header { background: white; display: flex; flex-direction: column; padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 20; position: relative; gap: 5px; }
         .status-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .info-pill { padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 5px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); background-color: #f1c40f; color: #946d04; }
+        .info-pill { padding: 4px 8px; border-radius: 20px; font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 4px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .pill-energy { background-color: #ff7675; color: #fff; text-shadow: 1px 1px 0 #d63031; box-shadow: inset 0 2px 5px rgba(214,48,49,0.5); }
+        .pill-gem { background-color: #9b59b6; color: #fff; text-shadow: 1px 1px 0 #8e44ad; box-shadow: inset 0 2px 5px rgba(142,68,173,0.5); }
+        .pill-coin { background-color: #f1c40f; color: #946d04; text-shadow: 1px 1px 0 #fff; }
+        
         .info-row { display: flex; flex-direction: column; align-items: center; width: 100%; position: relative; }
         .level-text { font-size: 14px; font-weight: bold; color: #666; margin-bottom: 2px; }
         #temp-dock { height: 50px; width: 100%; max-width: 240px; background: #eee; border-radius: 8px; border: 2px dashed #bbb; display: flex; justify-content: center; align-items: center; padding: 0 5px; position: relative; }
@@ -82,7 +87,6 @@
         .tool-btn span { font-size: 10px; font-weight: bold; color: #555; margin-top: -2px; }
         .tool-cost { position: absolute; top: -10px; right: -10px; background: #f1c40f; color: #946d04; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; }
 
-        /* 卡牌样式 */
         .tile { position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); cursor: pointer; z-index: 10; pointer-events: auto; }
         .tile:active { filter: brightness(0.8) drop-shadow(1px 2px 1px rgba(0,0,0,0.3)); }
         .tile.disabled { filter: brightness(0.4) grayscale(0.5) !important; pointer-events: none !important; }
@@ -168,24 +172,16 @@
             60% { transform: translate(-50%, -50%) scale(1.5) rotate(0deg); }
         }
 
+        @keyframes badgeBounce {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-4px) scale(1.1); }
+        }
+
         .reward-dim-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 99998; opacity: 1; transition: opacity 0.2s ease; }
 
         .animal-wrapper.charging::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; border-radius: 50%; border: 2px solid #fff; opacity: 0; animation: chargeRing 0.8s infinite; pointer-events: none; }
         .merge-poof { position: absolute; pointer-events: none; z-index: 1000; background: radial-gradient(circle, rgba(255,255,255,0.9), transparent 70%); transform: translate(-50%, -50%); animation: poofExpand 0.5s ease-out forwards; }
         .merge-text { position: absolute; color: #ffeb3b; font-weight: bold; font-size: 16px; text-shadow: 2px 2px 0 #000; z-index: 1001; pointer-events: none; animation: floatUp 1s ease-out forwards; white-space: nowrap; }
-
-        /* ======== 修复：金币飞行特效样式 ======== */
-        .fly-coin {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background-image: url('./img/animal_coin.png');
-            background-size: cover;
-            background-position: center;
-            z-index: 100000;
-            pointer-events: none;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
 
         .party-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4000; display: none; background-color: rgba(0, 0, 0, 0.3); mix-blend-mode: hard-light; background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.6) 0%, transparent 20%), radial-gradient(circle at 20% 30%, rgba(255,0,100,0.5) 0%, transparent 30%); background-size: 200% 200%; animation: discoMove 3s infinite linear alternate; }
         #game-container.party-active:not(.prank-active) .party-overlay { display: block; }
@@ -194,13 +190,16 @@
         .zoo-top-bar { height: 70px; background: rgba(255,255,255,0.8); display: flex; justify-content: flex-end; align-items: center; padding: 0 15px; pointer-events: auto; }
         .info-card-container { position: absolute; bottom: 85px; left: 0; width: 100%; display: none; justify-content: center; pointer-events: none; z-index: 5500; transition: opacity 0.3s; }
         .info-card { margin: 0 10px 10px 10px; background: #d7ccc8; border: 3px solid #5d4037; border-radius: 15px; padding: 5px; display: flex; justify-content: space-between; align-items: center; pointer-events: auto; box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: transform 0.2s; width: 90%;}
-        .bottom-dock { position: absolute; bottom: 0; left: 0; width: 100%; background: #5d4037; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 4px solid #3e2723; pointer-events: auto; z-index: 6000; }
-
-        .dock-btn { width: 60px; height: 60px; border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 14px; cursor: pointer; border: 2px solid rgba(0,0,0,0.2); box-shadow: 0 4px 0 rgba(0,0,0,0.3); text-align: center; position: relative; transition: all 0.1s; }
+        
+        .bottom-dock { position: absolute; bottom: 0; left: 0; width: 100%; background: #5d4037; padding: 10px; display: flex; justify-content: space-around; align-items: center; border-top: 4px solid #3e2723; pointer-events: auto; z-index: 6000; gap: 5px;}
+        .dock-btn { width: 60px; height: 60px; border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 13px; cursor: pointer; border: 2px solid rgba(0,0,0,0.2); box-shadow: 0 4px 0 rgba(0,0,0,0.3); text-align: center; position: relative; transition: all 0.1s; flex-shrink: 0;}
         .dock-btn:active { transform: translateY(4px); box-shadow: none; }
         .btn-express { background: #d7ccc8; color: #5d4037; border-radius: 50%; border-color: #5d4037; }
-        .btn-party { background: #ffab91; width: 140px; font-size: 24px; color: #bf360c; border-color: #d84315;}
+        .btn-shop { background: #3498db; border-color: #2980b9; }
+        .btn-party { background: #ffab91; color: #bf360c; border-color: #d84315; flex: 1; max-width: 100px; }
         .btn-book { background: #a1887f; border-radius: 50%; border-color: #5d4037; }
+
+        .red-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #e74c3c; border: 2px solid #fff; border-radius: 50%; z-index: 10; pointer-events: none; box-shadow: 0 2px 4px rgba(0,0,0,0.3); animation: bounceIn 0.5s; }
 
         .trash-obj { position: absolute; width: 40px; height: 40px; font-size: 30px; display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 10000; user-select: none; animation: trashDrop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.27); }
         .player-trash { pointer-events: auto !important; cursor: pointer !important; transition: transform 0.2s; z-index: 10000 !important; }
@@ -217,11 +216,16 @@
         #attack-alert-banner.show { top: 20px; }
         .toast-msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 30px; font-weight: bold; font-size: 18px; z-index: 100000; opacity: 0; pointer-events: none; transition: opacity 0.3s; text-align: center; }
 
+        /* 商店样式 */
+        .shop-item { background: #fff; border: 2px solid #d7ccc8; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        .shop-item.disabled { filter: grayscale(1); opacity: 0.6; pointer-events: none; }
+        .shop-item-icon { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2)); }
+
         #book-tabs { display: flex; overflow-x: auto; padding: 10px 15px; gap: 10px; border-bottom: 2px solid #e0e0e0; scrollbar-width: none; background: #fafafa; }
         #book-tabs::-webkit-scrollbar { display: none; }
-        .book-tab { padding: 6px 14px; background: #e0e0e0; border-radius: 20px; font-size: 14px; font-weight: bold; color: #757575; white-space: nowrap; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; box-shadow: 0 2px 0 #ccc; }
+        .book-tab { padding: 6px 14px; background: #e0e0e0; border-radius: 20px; font-size: 14px; font-weight: bold; color: #757575; white-space: nowrap; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; box-shadow: 0 2px 0 #ccc; position: relative; }
         .book-tab.active { background: #f1c40f; color: #7f6000; border-color: #f39c12; box-shadow: 0 2px 0 #d68910; }
-        
+
         .book-item { background: #fff; border: 2px solid #d7ccc8; border-radius: 12px; padding: 10px 5px; display: flex; flex-direction: column; align-items: center; position: relative; box-shadow: 0 4px 0 rgba(0,0,0,0.1); transition: transform 0.1s; }
         .book-item img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 8px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2)); }
         .book-item .name { font-size: 12px; font-weight: bold; color: #5d4037; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -229,11 +233,15 @@
         .rarity-normal { background: #3498db; }
         .rarity-rare { background: #e74c3c; }
 
+        .reward-badge { position: absolute; top: -8px; left: -8px; background: #2ecc71; color: white; border-radius: 12px; padding: 2px 6px; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer; animation: badgeBounce 0.8s infinite alternate; }
+        .reward-badge img { width: 12px !important; height: 12px !important; margin: 0 0 0 2px !important; filter: none !important; }
+
         .book-item.locked { background: #f5f5f5; border-color: #e0e0e0; box-shadow: 0 4px 0 #ddd; }
         .book-item.locked img { filter: brightness(0) opacity(0.2); } 
         .book-item.locked::after { content: '?'; position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 36px; font-weight: bold; color: #bdbdbd; pointer-events: none; }
         .book-item.locked .name { color: #9e9e9e; }
         .book-item.locked .rarity-badge { background: #9e9e9e; color: #e0e0e0; box-shadow: none; }
+        .book-item.locked .reward-badge { display: none; }
     </style>
 </head>
 <body>
@@ -244,10 +252,18 @@
         <!-- 头部数据区 -->
         <div id="game-header">
             <div class="status-row">
-                <div class="info-pill pill-coin" id="coin-pill">
-                    <img src="./img/animal_coin.png" style="width:18px;height:18px;margin-right:2px;"><span id="coin-count">0</span>
+                <div style="display:flex; gap:5px; flex-wrap: wrap;">
+                    <div class="info-pill pill-energy" id="energy-pill">
+                        <img src="./img/life.png" style="width:16px;height:16px;"><span id="energy-count">100</span>
+                    </div>
+                    <div class="info-pill pill-gem" id="gem-pill">
+                        <img src="./img/gem.png" style="width:16px;height:16px;"><span id="gem-count">0</span>
+                    </div>
+                    <div class="info-pill pill-coin" id="coin-pill">
+                        <img src="./img/animal_coin.png" style="width:16px;height:16px;"><span id="coin-count">0</span>
+                    </div>
                 </div>
-                <button class="btn btn-red" style="padding: 4px 10px;" onclick="ZooSystem.open()">🏠</button>
+                <button class="btn btn-red" style="padding: 4px 10px; flex-shrink:0;" onclick="ZooSystem.open()">🏠</button>
             </div>
             <div class="info-row">
                 <div class="level-text">第 <span id="level-num">1</span> 关</div>
@@ -297,8 +313,16 @@
             </div>
             <div class="zoo-ui-layer">
                 <div class="zoo-top-bar">
-                    <div style="font-size:20px;color:#d35400;display:flex;align-items:center;gap:4px;">
-                        <img src="./img/animal_coin.png" style="width:24px;height:24px;"><span id="zoo-coin-count">0</span>
+                    <div style="font-size:16px;display:flex;align-items:center;gap:10px; font-weight:bold;">
+                        <div style="display:flex;align-items:center;gap:4px;color:#c0392b;">
+                            <img src="./img/life.png" style="width:20px;height:20px;"><span id="zoo-energy-count">100</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:4px;color:#8e44ad;">
+                            <img src="./img/gem.png" style="width:20px;height:20px;"><span id="zoo-gem-count">0</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:4px;color:#d35400;">
+                            <img src="./img/animal_coin.png" style="width:20px;height:20px;"><span id="zoo-coin-count">0</span>
+                        </div>
                     </div>
                 </div>
                 <div class="info-card-container" id="habitat-info-panel">
@@ -319,9 +343,19 @@
                     </div>
                 </div>
                 <div class="bottom-dock">
-                    <div class="dock-btn btn-express" onclick="MatchGame.startLevel()"><div style="font-size:24px;">📦</div> 快递</div>
-                    <div class="dock-btn btn-party" onclick="EventSystem.startParty()"><div style="font-size:24px;">🎉</div> 派对</div>
-                    <div class="dock-btn btn-book" onclick="UI.openBook()"><div style="font-size:24px;">📖</div> 图鉴</div>
+                    <div class="dock-btn btn-express" onclick="MatchGame.resumeOrStartLevel()"><div style="font-size:24px;">📦</div> 快递</div>
+                    <div class="dock-btn btn-shop" onclick="ShopSystem.open()"><div style="font-size:24px;">🏪</div> 商店</div>
+                    <div class="dock-btn btn-party" onclick="EventSystem.startParty()">
+                        <div style="font-size:20px; line-height: 1;">🎉</div> 
+                        <div style="font-size:12px; margin: 2px 0;">派对</div>
+                        <div style="font-size:10px; color:#fff; background:rgba(0,0,0,0.2); border-radius:8px; padding:1px 6px; display:flex; align-items:center; gap:2px;">
+                            <img src="./img/animal_coin.png" style="width:10px;height:10px;"><span id="party-cost-text">1000</span>
+                        </div>
+                    </div>
+                    <div class="dock-btn btn-book" onclick="UI.openBook()">
+                        <div id="book-main-red-dot" class="red-dot" style="display:none;"></div>
+                        <div style="font-size:24px;">📖</div> 图鉴
+                    </div>
                 </div>
             </div>
         </div>
@@ -332,55 +366,58 @@
             <div id="book-content" style="flex:1;overflow-y:auto;padding:15px;display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;align-content:start;"></div>
             <button class="btn btn-red" style="margin:10px 20px; padding:12px; font-size:16px; justify-content:center;" onclick="UI.closeModal('book-modal')">关闭图鉴</button>
         </div>
+
+        <!-- 商店弹窗 -->
+        <div id="shop-modal" class="bottom-modal">
+            <div style="padding:15px;text-align:center;font-weight:bold;font-size:22px;color:#3e2723;letter-spacing:2px;">能量商店 🏪</div>
+            <div id="shop-content" style="flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px;"></div>
+            <button class="btn btn-red" style="margin:10px 20px; padding:12px; font-size:16px; justify-content:center;" onclick="UI.closeModal('shop-modal')">关闭商店</button>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('contextmenu', function(event) { event.preventDefault(); });
+        document.addEventListener('contextmenu', event => event.preventDefault());
         let partyCoinTimer = null;
         let currentBookTab = ''; 
 
-        // ==================== 全局加载二次 Spine (修复安卓兼容性) ====================
+        // ==================== 全局加载二次 Spine ====================
         const SpineManager = {
             app: null, 
             spineDataOpenEgg: null, 
             spineDataMeager: null,
             isError: false,
             init() {
-                try {
-                    if (window.PIXI && PIXI.Sprite) {
-                        const origSet = Object.getOwnPropertyDescriptor(PIXI.Sprite.prototype, 'texture').set;
-                        Object.defineProperty(PIXI.Sprite.prototype, 'texture', {
-                            set: function(val) {
-                                if (!val || !val.baseTexture) { val = PIXI.Texture.EMPTY; }
-                                origSet.call(this, val);
-                            },
-                            get: function() { return this._texture; }
-                        });
-                    }
-                    this.app = new PIXI.Application({ resizeTo: window, transparent: true });
-                    this.app.view.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; pointer-events:none; display:none;';
-                    document.body.appendChild(this.app.view);
-
-                    this.app.loader
-                        .add('openegg', './animation/openegg.json')
-                        .add('meager', './animation/meager.json')
-                        .load((loader, res) => {
-                            if (res.openegg && res.openegg.spineData) {
-                                this.spineDataOpenEgg = res.openegg.spineData;
-                            }
-                            if (res.meager && res.meager.spineData) {
-                                this.spineDataMeager = res.meager.spineData;
-                            }
-                        });
-                    this.app.loader.onError.add(() => { this.isError = true; });
-                } catch(e) {
-                    console.warn("PixiJS Init Failed, fallback enabled", e);
-                    this.isError = true;
+                if (window.PIXI && PIXI.Sprite) {
+                    const origSet = Object.getOwnPropertyDescriptor(PIXI.Sprite.prototype, 'texture').set;
+                    Object.defineProperty(PIXI.Sprite.prototype, 'texture', {
+                        set(val) {
+                            if (!val || !val.baseTexture) { val = PIXI.Texture.EMPTY; }
+                            origSet.call(this, val);
+                        },
+                        get() { return this._texture; }
+                    });
                 }
+
+                this.app = new PIXI.Application({ resizeTo: window, transparent: true });
+                this.app.view.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; pointer-events:none; display:none;';
+                document.body.appendChild(this.app.view);
+
+                this.app.loader
+                    .add('openegg', './animation/openegg.json')
+                    .add('meager', './animation/meager.json')
+                    .load((loader, res) => {
+                        if (res.openegg && res.openegg.spineData) {
+                            this.spineDataOpenEgg = res.openegg.spineData;
+                        }
+                        if (res.meager && res.meager.spineData) {
+                            this.spineDataMeager = res.meager.spineData;
+                        }
+                    });
+                this.app.loader.onError.add(() => { this.isError = true; });
             },
-            
+
             play(animName, onMiddle, onComplete) {
-                if (!this.spineDataOpenEgg || !this.app) return false;
+                if (!this.spineDataOpenEgg) return false;
                 this.app.view.style.display = 'block';
                 const anim = new PIXI.spine.Spine(this.spineDataOpenEgg);
                 anim.x = window.innerWidth / 2;
@@ -406,14 +443,14 @@
             },
 
             playMeager(x, y) {
-                if (!this.spineDataMeager || !this.app) return null;
-                
+                if (!this.spineDataMeager) return null;
+
                 this.app.view.style.display = 'block';
                 const anim = new PIXI.spine.Spine(this.spineDataMeager);
                 anim.x = x;
                 anim.y = y;
                 this.app.stage.addChild(anim);
-                
+
                 try {
                     anim.state.setAnimation(0, 'enter', false);
                 } catch(e) {
@@ -434,7 +471,7 @@
                         }
                     } catch(e) {}
                 };
-                
+
                 setTimeout(destroyFn, 3500); 
                 return destroyFn;
             }
@@ -444,19 +481,19 @@
         const Config = {
             BOXES:['./img/box1.png', './img/box2.png', './img/box3.png', './img/box4.png', './img/box5.png', './img/box6.png', './img/box7.png', './img/box8.png'],
             BALLS:['./img/pokeball1.png', './img/pokeball2.png', './img/pokeball3.png', './img/pokeball4.png'],
-            
+
             ANIMALS: (function(){
                 let arr =[];
                 arr.push({ id: 'cat0', type: 'cat', baseName: '猫咪大家族', name: '基础猫咪', url: './img/cat0.png', rarity: 'normal' });
                 for(let i=1; i<=20; i++) {
                     arr.push({ id: `cat${i}`, type: 'cat', baseName: '猫咪大家族', name: `特殊猫咪${i}`, url: `./img/cat${i}.png`, rarity: 'rare' });
                 }
-                
+
                 arr.push({ id: 'corn0', type: 'corn', baseName: '疯狂牛牛', name: '基础牛牛', url: './img/corn0.png', rarity: 'normal' });
                 for(let i=1; i<=9; i++) {
                     arr.push({ id: `corn${i}`, type: 'corn', baseName: '疯狂牛牛', name: `特殊牛牛${i}`, url: `./img/corn${i}.png`, rarity: 'rare' });
                 }
-                
+
                 arr.push({ id: 'capybara0', type: 'capybara', baseName: '呆萌水豚', name: '基础水豚', url: './img/capybara0.png', rarity: 'normal' });
                 for(let i=1; i<=4; i++) {
                     arr.push({ id: `capybara${i}`, type: 'capybara', baseName: '呆萌水豚', name: `特殊水豚${i}`, url: `./img/capybara${i}.png`, rarity: 'rare' });
@@ -488,12 +525,10 @@
             bgmPause() { this.bgm.pause(); },
             land() {}, heavy() {}, sweep() {}, match() {}, win() {}, jump() {}
         };
-        // 修复微信内音频初始化
         window.addEventListener('click', () => AudioSys.init(), { once: true });
-        document.addEventListener("WeixinJSBridgeReady", function () { AudioSys.init(); }, false);
 
         // ==================== 3. 状态与存储 ====================
-        let State = { coins: 0, animals:[], level: 1, habitatLevels: {}, trashCount: 0 };
+        let State = { coins: 0, energy: 100, gems: 0, lastEnergyTime: 0, animals:[], level: 1, habitatLevels: {}, trashCount: 0, claimedBookRewards: [], shopRecords: {}, partyCount: 0 };
         let MatchState = { tiles: [], dock:[], extraDock: [], history:[], active: false, tempRewards:[], isPrankMode: false, prankTrashCount: 0, pendingRewardAnim: false };
 
         const Storage = {
@@ -501,19 +536,36 @@
                 const save = localStorage.getItem('zooMixSaveV3');
                 if(save) {
                     State = JSON.parse(save);
-                    const validIds = Config.ANIMALS.map(a=>a.id);
+                    if(State.energy === undefined) State.energy = 100;
+                    if(State.gems === undefined) State.gems = 0;
+                    if(State.partyCount === undefined) State.partyCount = 0;
+                    if(!State.claimedBookRewards) State.claimedBookRewards = [];
+                    if(!State.shopRecords) State.shopRecords = {};
+                    
+                    let now = Date.now();
+                    if (State.lastEnergyTime) {
+                        let minutesPassed = Math.floor((now - State.lastEnergyTime) / 60000);
+                        if (minutesPassed > 0 && State.energy < 100) {
+                            State.energy = Math.min(100, State.energy + minutesPassed * 10);
+                            State.lastEnergyTime = now;
+                        }
+                    } else {
+                        State.lastEnergyTime = now;
+                    }
+
                     if(State.animals) {
-                        State.animals = State.animals.filter(a => validIds.indexOf(a.id) !== -1).map(a => {
+                        State.animals = State.animals.map(a => {
                             if(!a.type) {
                                 let conf = Config.ANIMALS.find(c => c.id === a.id);
                                 if(conf) { a.type = conf.type; a.baseName = conf.baseName; }
+                                else { a.type = 'unknown'; a.baseName = '神秘动物'; }
                             }
                             return a;
                         });
                     }
                     if(!State.habitatLevels) State.habitatLevels = {};
                 } else {
-                    State = { coins: 0, animals:[], level: 1, habitatLevels: {}, trashCount: 0 };
+                    State = { coins: 0, energy: 100, gems: 0, lastEnergyTime: Date.now(), animals:[], level: 1, habitatLevels: {}, trashCount: 0, claimedBookRewards: [], shopRecords: {}, partyCount: 0 };
                 }
             },
             save() { localStorage.setItem('zooMixSaveV3', JSON.stringify(State)); UI.update(); }
@@ -526,19 +578,47 @@
                 let c = Math.floor(State.coins); 
                 document.getElementById('coin-count').innerText = c; 
                 document.getElementById('zoo-coin-count').innerText = c;
+                
+                document.getElementById('energy-count').innerText = State.energy;
+                document.getElementById('zoo-energy-count').innerText = State.energy;
+                
+                document.getElementById('gem-count').innerText = State.gems;
+                document.getElementById('zoo-gem-count').innerText = State.gems;
+
                 document.getElementById('level-num').innerText = State.level;
+
+                // 动态更新派对价格
+                let partyCost = State.partyCount === 0 ? 1000 : (State.partyCount === 1 ? 3000 : 5000);
+                let partyCostEl = document.getElementById('party-cost-text');
+                if(partyCostEl) partyCostEl.innerText = partyCost;
+
+                this.checkMainRedDot();
             },
             openModal(id) { document.getElementById(id).classList.add('open'); },
             closeModal(id) { document.getElementById(id).classList.remove('open'); },
-            
+
+            checkMainRedDot() {
+                const owned = new Set(State.animals.map(a => a.id));
+                const claimed = new Set(State.claimedBookRewards || []);
+                let hasReward = false;
+                for (let id of owned) {
+                    if (!claimed.has(id)) {
+                        hasReward = true;
+                        break;
+                    }
+                }
+                const dot = document.getElementById('book-main-red-dot');
+                if (dot) dot.style.display = hasReward ? 'block' : 'none';
+            },
+
             openBook() {
                 const tabsContainer = document.getElementById('book-tabs');
                 const contentContainer = document.getElementById('book-content');
                 tabsContainer.innerHTML = '';
                 contentContainer.innerHTML = '';
 
-                let ownedIds =[];
-                State.animals.forEach(a => ownedIds.push(a.id));
+                const owned = new Set(State.animals.map(a=>a.id));
+                const claimed = new Set(State.claimedBookRewards || []);
 
                 let groups = {};
                 Config.ANIMALS.forEach(ani => {
@@ -558,11 +638,17 @@
 
                 types.forEach(t => {
                     let group = groups[t];
-                    let ownedCount = group.list.filter(a => ownedIds.indexOf(a.id) !== -1).length;
-                    
+                    let ownedCount = group.list.filter(a => owned.has(a.id)).length;
+                    let groupHasReward = group.list.some(a => owned.has(a.id) && !claimed.has(a.id));
+
                     let tab = document.createElement('div');
                     tab.className = `book-tab ${t === currentBookTab ? 'active' : ''}`;
                     tab.innerText = `${group.name} (${ownedCount}/${group.list.length})`;
+                    
+                    if (groupHasReward) {
+                        tab.innerHTML += `<div class="red-dot"></div>`;
+                    }
+
                     tab.onclick = () => {
                         AudioSys.click();
                         currentBookTab = t;
@@ -574,11 +660,18 @@
                 let activeGroup = groups[currentBookTab];
                 if (activeGroup) {
                     activeGroup.list.forEach(ani => {
-                        const isOwned = ownedIds.indexOf(ani.id) !== -1;
-                        const rarityText = ani.rarity === 'rare' ? '特殊' : '基础';
-                        
+                        const isOwned = owned.has(ani.id);
+                        const isClaimed = claimed.has(ani.id);
+                        const rarityText = ani.rarity==='rare' ? '特殊' : '基础';
+
+                        let rewardHtml = '';
+                        if(isOwned && !isClaimed) {
+                            rewardHtml = `<div class="reward-badge" onclick="UI.claimBookReward('${ani.id}', event)">+10<img src="./img/gem.png"></div>`;
+                        }
+
                         const html = `
                             <div class="book-item ${isOwned ? '' : 'locked'}">
+                                ${rewardHtml}
                                 <div class="rarity-badge ${ani.rarity==='rare' ? 'rarity-rare' : 'rarity-normal'}">${isOwned ? rarityText : '???'}</div>
                                 <img src="${ani.url}">
                                 <div class="name">${isOwned ? ani.name : '???'}</div>
@@ -589,14 +682,137 @@
                 }
 
                 this.openModal('book-modal'); 
+            },
+
+            claimBookReward(id, event) {
+                event.stopPropagation();
+                AudioSys.click();
+                State.gems += 10;
+                if(!State.claimedBookRewards) State.claimedBookRewards = [];
+                State.claimedBookRewards.push(id);
+                Storage.save();
+                
+                let btn = event.currentTarget;
+                let r = btn.getBoundingClientRect();
+                
+                let c = document.createElement('img'); 
+                c.src = './img/gem.png'; 
+                c.style.cssText = `position:fixed; left:${r.left}px; top:${r.top}px; width:30px; height:30px; z-index:99999; pointer-events:none; transition:all 0.6s cubic-bezier(0.25, 1, 0.5, 1); filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));`; 
+                document.body.appendChild(c);
+                
+                c.offsetHeight;
+                
+                let targetId = document.getElementById('zoo-screen').style.display === 'flex' ? 'zoo-gem-count' : 'gem-pill';
+                let pR = document.getElementById(targetId).getBoundingClientRect();
+
+                setTimeout(()=>{ 
+                    c.style.left=(pR.left + pR.width/2 - 15)+'px'; 
+                    c.style.top=(pR.top + pR.height/2 - 15)+'px'; 
+                    c.style.opacity=0; 
+                    c.style.transform='scale(0.5)'; 
+                }, 50);
+                
+                setTimeout(()=>{ 
+                    c.remove(); 
+                    UI.toast(`解锁图鉴：+10 钻石！`);
+                }, 650);
+
+                this.openBook(); 
+            }
+        };
+
+        // ==================== 商店系统 ====================
+        const ShopSystem = {
+            checkDate() {
+                let today = new Date().toDateString();
+                if(!State.shopRecords || State.shopRecords.date !== today) {
+                    State.shopRecords = { date: today, free: false, tenGem: false };
+                    Storage.save();
+                }
+            },
+            open() {
+                this.checkDate();
+                this.render();
+                UI.openModal('shop-modal');
+            },
+            render() {
+                let content = document.getElementById('shop-content');
+                content.innerHTML = `
+                    <div class="shop-item ${State.shopRecords.free ? 'disabled' : ''}" onclick="ShopSystem.buy('free')">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="./img/life.png" class="shop-item-icon">
+                            <div style="font-size:18px; font-weight:bold; color:#5d4037;">20 体力</div>
+                        </div>
+                        <button class="btn btn-green">${State.shopRecords.free ? '已领取' : '免费'}</button>
+                    </div>
+                    
+                    <div class="shop-item ${State.shopRecords.tenGem ? 'disabled' : ''}" onclick="ShopSystem.buy('tenGem')">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="./img/life.png" class="shop-item-icon">
+                            <div style="font-size:18px; font-weight:bold; color:#5d4037;">100 体力</div>
+                        </div>
+                        <button class="btn btn-blue" style="display:flex; align-items:center; gap:5px;">
+                            <img src="./img/gem.png" style="width:16px;height:16px;"> 10
+                        </button>
+                    </div>
+
+                    <div class="shop-item" onclick="ShopSystem.buy('thirtyGem')">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="./img/life.png" class="shop-item-icon">
+                            <div style="font-size:18px; font-weight:bold; color:#5d4037;">100 体力</div>
+                        </div>
+                        <button class="btn btn-purple" style="display:flex; align-items:center; gap:5px;">
+                            <img src="./img/gem.png" style="width:16px;height:16px;"> 30
+                        </button>
+                    </div>
+                `;
+            },
+            buy(type) {
+                this.checkDate();
+                if (type === 'free') {
+                    if(State.shopRecords.free) return;
+                    State.shopRecords.free = true;
+                    State.energy += 20;
+                    UI.toast("领取成功：+20体力");
+                } else if (type === 'tenGem') {
+                    if(State.shopRecords.tenGem) return;
+                    if(State.gems < 10) return UI.toast("钻石不足！");
+                    State.gems -= 10;
+                    State.shopRecords.tenGem = true;
+                    State.energy += 100;
+                    UI.toast("兑换成功：+100体力");
+                } else if (type === 'thirtyGem') {
+                    if(State.gems < 30) return UI.toast("钻石不足！");
+                    State.gems -= 30;
+                    State.energy += 100;
+                    UI.toast("兑换成功：+100体力");
+                }
+                Storage.save();
+                this.render();
             }
         };
 
         // ==================== 5. 核心消除玩法 ====================
         const MatchGame = {
             mapEl: document.getElementById('map-area'), dockEl: document.getElementById('dock-area'), exDockEl: document.getElementById('extra-dock'),
-            startLevel() { document.getElementById('result-modal').style.display='none'; ZooSystem.close(); this.init(); },
-            debugReset() { State.level = 1; State.coins = 9999; State.trashCount = 0; Storage.save(); UI.update(); this.startLevel(); UI.toast("已重置第1关，金币已满！"); },
+            
+            resumeOrStartLevel() {
+                document.getElementById('result-modal').style.display='none'; 
+                ZooSystem.close(); 
+                if(MatchState.active && MatchState.tiles.length > 0) {
+                    return; 
+                }
+                this.init();
+            },
+            
+            debugReset() { 
+                State.level = 1; State.coins = 9999; State.energy = 100; State.gems = 0; State.trashCount = 0; 
+                State.claimedBookRewards = []; State.animals = []; State.habitatLevels = {}; State.shopRecords = {}; State.partyCount = 0;
+                Storage.save(); UI.update(); 
+                this.init(); 
+                UI.toast("已彻底重置！记录、动物、商店均已刷新！"); 
+            },
+            
             init() {
                 document.getElementById('result-modal').style.display = 'none';
                 this.mapEl.innerHTML=''; this.dockEl.innerHTML=''; this.exDockEl.innerHTML='';
@@ -609,71 +825,94 @@
                 const mapHeight = this.mapEl.clientHeight || 500;
                 const mapWidth = this.mapEl.clientWidth || 360;
                 
-                let scale = Math.min(1.1, mapWidth / 360, mapHeight / 550); 
-                
+                let scale = Math.min(1.0, mapWidth / 380, mapHeight / 600); 
                 const W = 73 * scale, H = 91 * scale;
                 const C_W = mapWidth;
                 const CX = C_W / 2 - W / 2;
-                const CY = Math.max(60, mapHeight * 0.22); 
-                let configs =[];
+                const CY = mapHeight * 0.3; 
+                
+                let configs = [];
+                let botConfigs = []; 
 
                 if (level === 1) { 
-                    for(let r=0; r<3; r++) for(let c=0; c<3; c++) configs.push({x:CX+(c-1)*75*scale, y:CY+(r-1)*95*scale, l:0});
-                    for(let c=0; c<3; c++) configs.push({x:CX+(c-1)*75*scale, y:CY+45*scale, l:1});
+                    for(let r=0; r<3; r++) for(let c=0; c<3; c++) configs.push({x:CX+(c-1)*W*1.05, y:CY+(r-1)*H*1.05, l:0});
+                    for(let c=0; c<3; c++) configs.push({x:CX+(c-1)*W*1.05, y:CY+H*0.5, l:1});
                 } else if (level === 2) {
-                    for(let r=0; r<4; r++) for(let c=0; c<4; c++) configs.push({x:CX+(c-1.5)*75*scale, y:CY+(r-1.5)*95*scale, l:0});
-                    for(let r=0; r<2; r++) for(let c=0; c<2; c++) configs.push({x:CX+(c-0.5)*75*scale, y:CY+(r-0.5)*95*scale, l:1});
-                    configs.push({x:CX, y:CY-150*scale, l:0}); 
-                } else if (level === 3) {
-                    for(let r=0; r<5; r++) for(let c=0; c<5; c++) if((r+c)%2===0) configs.push({x:CX+(c-2)*60*scale, y:CY+(r-2)*80*scale, l:0});
-                    for(let r=0; r<4; r++) for(let c=0; c<4; c++) configs.push({x:CX+(c-1.5)*60*scale, y:CY+(r-1.5)*80*scale, l:1});
-                    for(let r=0; r<3; r++) for(let c=0; c<3; c++) configs.push({x:CX+(c-1)*60*scale, y:CY+(r-1)*80*scale, l:2});
+                    for(let r=0; r<4; r++) for(let c=0; c<4; c++) configs.push({x:CX+(c-1.5)*W*1.05, y:CY+(r-1.5)*H*1.05, l:0});
+                    for(let r=0; r<2; r++) for(let c=0; c<2; c++) configs.push({x:CX+(c-0.5)*W*1.05, y:CY+(r-0.5)*H*1.05, l:1});
+                    configs.push({x:CX, y:CY-H*1.5, l:0}); 
                 } else {
                     let effLevel = Math.max(1, level - 2);
-                    let layers = 4 + Math.min(Math.floor(effLevel/2), 4);
-                    let colOff = W * 0.55; let rowOff = H * 0.55;
+                    let layers = 4 + Math.min(Math.floor(effLevel/2), 6); 
+                    let type = effLevel % 3; 
                     
-                    for (let l=0; l<layers; l++) {
-                        let size = layers - l; let sX = CX - ((size-1) * colOff / 2); let sY = CY - ((size-1) * rowOff / 2) + 10;
-                        for (let r=0; r<size; r++) {
-                            for (let c=0; c<size; c++) {
-                                if (l===0 && size>=4 && ((r===0&&c===0)||(r===0&&c===size-1)||(r===size-1&&c===0)||(r===size-1&&c===size-1))) continue;
-                                configs.push({ x: sX + c * colOff, y: sY + r * rowOff, l: l });
+                    for (let l = 0; l < layers; l++) {
+                        if (type === 0) { 
+                            let size = Math.max(2, 5 - Math.floor(l/2)); 
+                            let sX = CX - ((size-1) * W * 0.5);
+                            let sY = CY - ((size-1) * H * 0.5);
+                            for(let r=0; r<size; r++) {
+                                for(let c=0; c<size; c++) {
+                                    configs.push({ x: sX + c*W, y: sY + r*H, l: l });
+                                }
+                            }
+                        } else if (type === 1) { 
+                            let sY = CY - H*0.5;
+                            for(let r=0; r<4; r++) {
+                                configs.push({ x: CX - W*0.8, y: sY + r*H*0.7 + (l%2)*15, l: l });
+                                configs.push({ x: CX + W*0.8, y: sY + r*H*0.7 + (l%2)*15, l: l });
+                            }
+                            if(l%2===0) configs.push({x: CX, y: CY + H*1.5, l:l});
+                        } else { 
+                            let sY = CY + H*0.5;
+                            for(let i=-1; i<=1; i++) {
+                                for(let j=-1; j<=1; j++) {
+                                    if(Math.abs(i) === Math.abs(j)) {
+                                        configs.push({ x: CX + i*W*1.1, y: sY + j*H*1.1, l: l });
+                                    }
+                                }
                             }
                         }
                     }
                     
-                    let sideL = 2 + Math.min(Math.floor(effLevel/2), 3);
-                    for (let l=0; l<sideL; l++) {
-                        for(let r=0; r<4; r++) { 
-                            configs.push({ x: 5 + l*2, y: CY - 30 + r * H * 0.45 - l*2, l: l });
-                            configs.push({ x: C_W - W - 5 - l*2, y: CY - 30 + r * H * 0.45 - l*2, l: l });
-                        }
-                    }
-                    
-                    let blindC = 6 + Math.min(effLevel*2, 14);
-                    for(let i=0; i<blindC; i++) {
-                        configs.push({ x: 25+i*3, y: 70 * scale, l: i }); 
-                        configs.push({ x: C_W-W-25-i*3, y: 70 * scale, l: i });
-                    }
-                    
-                    let botC = 3 + Math.min(Math.floor(effLevel/2), 3);
-                    let botX = CX - ((botC-1)*(W*0.85))/2;
-                    let botY = CY + (layers * H * 0.4) + 60 * scale;
-                    
-                    if (botY + H > mapHeight - 10) { 
-                        botY = mapHeight - H - 10; 
-                    }
-                    
+                    let botC = 6;
+                    let botX = Math.max(10, CX - ((botC-1)*(W*0.85))/2);
+                    let botY = mapHeight - H - 15;
                     for(let i=0; i<botC; i++) {
                         for(let l=0; l<2; l++) {
-                            configs.push({ x: botX+i*(W*0.85), y: botY+l*8, l: l });
+                            botConfigs.push({ x: botX + i*(W*0.85), y: botY + l*8, l: l });
                         }
                     }
                 }
 
-                let rem = configs.length % 3; if(rem !== 0) configs.splice(configs.length-rem, rem);
-                
+                if (configs.length > 0) {
+                    let minY = Math.min(...configs.map(c => c.y));
+                    let maxY = Math.max(...configs.map(c => c.y));
+                    let minX = Math.min(...configs.map(c => c.x));
+                    let maxX = Math.max(...configs.map(c => c.x)) + W;
+                    
+                    let totalH = maxY - minY + H;
+                    let botLimitY = mapHeight - H - 30; 
+                    
+                    let targetMinY = (botLimitY - totalH) / 2;
+                    if (targetMinY < 20) targetMinY = 20; 
+                    
+                    let offsetY = targetMinY - minY;
+                    
+                    let targetMinX = (mapWidth - (maxX - minX)) / 2;
+                    let offsetX = targetMinX - minX;
+
+                    configs.forEach(c => {
+                        c.y += offsetY;
+                        c.x += offsetX;
+                    });
+                }
+
+                configs = configs.concat(botConfigs);
+
+                let rem = configs.length % 3; 
+                if(rem !== 0) configs.splice(configs.length-rem, rem);
+
                 let typeC;
                 if (level === 1) typeC = 3;
                 else if (level === 2) typeC = 4;
@@ -682,16 +921,16 @@
 
                 let types =[]; 
                 for(let i=0; i<configs.length/3; i++) { let t = i%typeC; types.push(t,t,t); }
-                
+
                 let shuffledTypes =[];
                 let chunkSize = typeC * 3; 
                 for (let i = 0; i < types.length; i += chunkSize) {
                     let chunk = types.slice(i, i + chunkSize);
                     chunk.sort(() => Math.random() - 0.5);
-                    chunk.forEach(function(item) { shuffledTypes.push(item); });
+                    shuffledTypes.push(...chunk);
                 }
                 types = shuffledTypes;
-                
+
                 let swapChance = level < 4 ? 0.1 : 0.01; 
                 for(let i=0; i<types.length; i++){
                     if(Math.random() < swapChance){
@@ -699,8 +938,7 @@
                         let temp = types[i]; types[i] = types[r]; types[r] = temp;
                     }
                 }
-
-                configs.forEach((pos, i) => {
+               configs.forEach((pos, i) => {
                     let div = document.createElement('div'); div.className = 'tile'; 
                     div.style.backgroundImage = `url(${Config.BOXES[types[i] % Config.BOXES.length]})`;
                     div.style.left = pos.x+'px'; div.style.top = pos.y+'px'; div.style.zIndex = 100 + pos.l*100 + i;
@@ -710,7 +948,7 @@
                     this.mapEl.appendChild(div); MatchState.tiles.push(tile);
                 });
             },
-            
+
             checkCover() {
                 MatchState.tiles.forEach(t => { if(!t.inDock && !t.isRm && !t.isEx) t.el.classList.remove('disabled'); });
                 let active = MatchState.tiles.filter(t => !t.inDock && !t.isRm && !t.isEx);
@@ -729,18 +967,26 @@
 
             clickTile(t) {
                 if(!MatchState.active || t.inDock || t.isRm || MatchState.dock.length >= 7) return;
+                
                 if(!t.isEx) {
                     let tops = MatchState.tiles.filter(a => a.id!==t.id && !a.inDock && !a.isRm && !a.isEx && a.l > t.l);
                     let hitW = t.w * 0.65; let hitH = t.h * 0.65;
-                    let hasCover = false;
-                    for (let idx=0; idx<tops.length; idx++) {
-                        let top = tops[idx];
-                        if (Math.abs(top.x - t.x) < hitW && Math.abs(top.y - t.y) < hitH) { hasCover = true; break; }
-                    }
-                    if (hasCover) return; 
+                    if(tops.some(top => Math.abs(top.x - t.x) < hitW && Math.abs(top.y - t.y) < hitH)) return; 
                 }
+
+                if(State.energy <= 0) {
+                    UI.toast("⚡ 体力不足！去商店兑换或等待恢复吧！");
+                    let ep = document.getElementById('energy-pill');
+                    ep.style.animation = 'none';
+                    ep.offsetHeight; 
+                    ep.style.animation = 'errorShake 0.3s';
+                    return;
+                }
+                State.energy -= 1;
+                Storage.save();
+
                 AudioSys.click(); MatchState.history.push({ type: 'pick', tile: t, prev: t.isEx ? 'ex' : 'map' });
-                
+
                 let sR = t.el.getBoundingClientRect(); 
                 t.inDock = true; t.time = Date.now(); t.isLanded = false; MatchState.dock.push(t); this.checkCover();
 
@@ -748,20 +994,20 @@
                     t.isEx=false; MatchState.extraDock = MatchState.extraDock.filter(x=>x.id!==t.id);
                     t.el.classList.remove('in-extra'); t.el.style.position='absolute'; 
                 }
-                
+
                 t.el.classList.add('in-dock'); 
                 t.el.style.position=''; t.el.style.left=''; t.el.style.top='';
                 MatchState.dock.sort((a,b) => (a.type===b.type) ? a.time-b.time : MatchState.dock.find(x=>x.type===a.type).time - MatchState.dock.find(x=>x.type===b.type).time);
                 this.dockEl.appendChild(t.el); MatchState.dock.forEach((item, idx) => item.el.style.order = idx);
-                
+
                 let eR = t.el.getBoundingClientRect(); 
                 t.el.style.transition='none'; 
                 t.el.style.transform=`translate(${sR.left-eR.left}px, ${sR.top-eR.top}px) scale(1.1)`; 
                 t.el.offsetHeight; 
-                
+
                 t.el.style.transition='transform 0.25s ease-out'; 
                 t.el.style.transform=''; 
-                
+
                 let ended = false;
                 const onEnd = () => { 
                     if(ended) return; ended=true; 
@@ -773,11 +1019,11 @@
                 t.el.addEventListener('transitionend', onEnd); 
                 setTimeout(onEnd, 300); 
             },
-            
+
             checkMatch() {
                 let counts = {}; MatchState.dock.forEach(t => { if(!t.isRemoving) counts[t.type] = (counts[t.type]||0)+1; });
                 let matchType = null;
-                
+
                 for(let k in counts) { 
                     if(counts[k]>=3) { 
                         let match = MatchState.dock.filter(t=>t.type==k&&!t.isRemoving).slice(0,3); 
@@ -790,9 +1036,9 @@
                     MatchState.history=[]; 
                     let list = MatchState.dock.filter(t=>t.type==matchType&&!t.isRemoving).slice(0,3);
                     let cR = list[1].el.getBoundingClientRect(), sX = cR.left+cR.width/2, sY = cR.top+cR.height/2;
-                    
+
                     list.forEach(t => { t.isRemoving=true; t.isRm=true; });
-                    MatchState.dock = MatchState.dock.filter(t => list.indexOf(t) === -1); 
+                    MatchState.dock = MatchState.dock.filter(t => !list.includes(t)); 
                     MatchState.dock.forEach((item, i) => item.el.style.order = i); 
                     this.checkCover();
 
@@ -803,28 +1049,22 @@
                     let isLastMatch = (MatchState.tiles.filter(t=>!t.inDock&&!t.isEx&&!t.isRm).length===0 && MatchState.dock.filter(t=>!t.isRemoving).length===0 && MatchState.extraDock.length===0);
                     let rand = Math.random();
 
-                    // ================= 修复：修改掉率并增加连串金币特效 =================
-                    if (rand < 0.10) { 
-                        // 10% 概率掉落精灵球
+                    if(rand < 0.2) { 
                         this.triggerAniReward(isLastMatch); 
-                    } else if (rand < 0.16) { 
-                        // 6% 概率触发捣乱垃圾
+                    } else if (rand < 0.22) { 
                         this.triggerTrashReward(isLastMatch); 
                     } else { 
-                        // 84% 概率爆金币（这里连飞3个视觉金币，总计给 10 个金币）
-                        let coinAmts = [4, 3, 3];
-                        for (let i = 0; i < 3; i++) {
+                        for(let i=0; i<3; i++) {
                             setTimeout(() => {
-                                EventSystem.flyCoin(coinAmts[i], sX - 15 + (Math.random()-0.5)*40, sY - 15 + (Math.random()-0.5)*40, false); 
-                            }, i * 150);
+                                EventSystem.flyCoin(5, sX - 15 + (Math.random()-0.5)*40, sY - 15 + (Math.random()-0.5)*40, false); 
+                            }, i * 100);
                         }
-                        
                         if (isLastMatch) {
                             MatchState.active = false;
-                            setTimeout(() => this.levelComplete(), 500);
+                            setTimeout(() => this.levelComplete(), 1000); 
                         }
                     }
-                    
+     
                     if (!isLastMatch) {
                         setTimeout(() => { this.checkMatch(); }, 200);
                     }
@@ -839,7 +1079,7 @@
             triggerAniReward(isLastMatch) {
                 let rand = Math.random();
                 let ani, animName;
-                
+
                 if(rand < 0.9) {
                     let normalPool = Config.DROP_POOL;
                     ani = normalPool[Math.floor(Math.random() * normalPool.length)];
@@ -849,7 +1089,7 @@
                     ani = rarePool[Math.floor(Math.random() * rarePool.length)];
                     animName = 'open2';  
                 }
-                
+
                 MatchState.tempRewards.push(ani);
                 let over = document.createElement('div'); over.className='reward-dim-layer'; document.body.appendChild(over);
 
@@ -871,9 +1111,9 @@
                         fly.style.left = targetX + 'px'; 
                         fly.style.top = targetY + 'px'; 
                         fly.style.transform = 'translate(-50%,-50%) scale(0.4)'; 
-                        
+
                         over.style.opacity = '0'; 
-                        
+
                         setTimeout(() => { 
                             fly.style.opacity = '0';
                             setTimeout(() => {
@@ -917,27 +1157,51 @@
                     }, 200);
                 }, 1200); 
             },
-            
             updateTemp() {
                 let d = document.getElementById('temp-dock'); d.classList.add('has-items'); d.innerHTML='';
                 MatchState.tempRewards.forEach(a => { let i = document.createElement('img'); i.src=a.url; i.className='mini-reward'; d.appendChild(i); });
             },
+            
             showOver() {
                 document.getElementById('result-title').innerText = "💔 槽位已满，游戏失败！";
                 document.getElementById('result-rewards-display').innerHTML = ""; 
                 document.getElementById('result-buttons').innerHTML = `
                     <button class="btn btn-orange" onclick="MatchGame.init()">🔄 重新挑战</button>
-                    <button class="btn btn-red" onclick="document.getElementById('result-modal').style.display='none'; ZooSystem.open()">🏠 动物园</button>`;
+                    <button class="btn btn-green" onclick="MatchGame.revive()">💖 复活 (50币)</button>`;
                 document.getElementById('result-modal').style.display = 'flex';
             },
+
+            revive() {
+                if (State.coins < 50) {
+                    UI.toast("金币不足 50！");
+                    return;
+                }
+                State.coins -= 50;
+                Storage.save();
+                UI.update();
+                MatchState.active = true;
+                document.getElementById('result-modal').style.display = 'none';
+                
+                let list = MatchState.dock.filter(t=>!t.isRemoving).slice(0,3); 
+                if(list.length > 0) {
+                    MatchState.history.push({ type:'out', tiles:list }); 
+                    let bIdx = MatchState.extraDock.length;
+                    list.forEach((t, i) => {
+                        t.inDock=false; t.isLanded=false; t.isEx=true; MatchState.extraDock.push(t); t.el.classList.remove('in-dock'); t.el.classList.add('in-extra');
+                        t.el.style.left = (10+(bIdx+i)%3*55)+'px'; t.el.style.top = (25-Math.floor((bIdx+i)/3)*20)+'px'; t.el.style.zIndex = 100+bIdx+i; 
+                        this.dockEl.removeChild(t.el); this.exDockEl.appendChild(t.el);
+                    });
+                    MatchState.dock = MatchState.dock.filter(t=>!list.includes(t)); 
+                    MatchState.dock.forEach((item, idx) => item.el.style.order=idx); 
+                    this.checkCover();
+                }
+            },
+
             levelComplete() {
                 MatchState.active=false; State.level++;
                 let rd = document.getElementById('result-rewards-display'); rd.innerHTML='';
                 if(MatchState.tempRewards.length > 0) {
-                    MatchState.tempRewards.forEach(a => {
-                        // 修复：替换 {...a} 兼容低版本微信安卓机
-                        State.animals.push(Object.assign({}, a, {uuid: Date.now()+Math.random(), level: 1}));
-                    });
+                    State.animals.push(...MatchState.tempRewards.map(a => ({...a, uuid: Date.now()+Math.random(), level: 1})));
                     document.getElementById('result-title').innerText = "📦 本关收获";
                     rd.innerHTML = MatchState.tempRewards.map(a => `<div class="reward-pop" style="margin:10px;text-align:center;"><img src="${a.url}" style="width:80px;height:80px;"><div style="color:#f1c40f;font-weight:bold;">${a.name}</div></div>`).join('');
                 } else {
@@ -947,7 +1211,7 @@
                 Storage.save();
 
                 document.getElementById('result-buttons').innerHTML = `
-                    <button class="btn btn-blue" onclick="MatchGame.startLevel()">⏭️ 下一关</button>
+                    <button class="btn btn-blue" onclick="MatchGame.init()">⏭️ 下一关</button>
                     <button class="btn btn-green" onclick="document.getElementById('result-modal').style.display='none'; ZooSystem.open()">🏠 动物园</button>
                 `;
                 document.getElementById('result-modal').style.display = 'flex';
@@ -959,7 +1223,7 @@
                     t.inDock=false; t.isLanded=false; t.isEx=true; MatchState.extraDock.push(t); t.el.classList.remove('in-dock'); t.el.classList.add('in-extra');
                     t.el.style.left = (10+(bIdx+i)%3*55)+'px'; t.el.style.top = (25-Math.floor((bIdx+i)/3)*20)+'px'; t.el.style.zIndex = 100+bIdx+i; this.dockEl.removeChild(t.el); this.exDockEl.appendChild(t.el);
                 });
-                MatchState.dock = MatchState.dock.filter(t => list.indexOf(t) === -1); MatchState.dock.forEach((item, idx) => item.el.style.order=idx); this.checkCover();
+                MatchState.dock = MatchState.dock.filter(t=>!list.includes(t)); MatchState.dock.forEach((item, idx) => item.el.style.order=idx); this.checkCover();
             },
             toolUndo() {
                 if(!MatchState.active || MatchState.history.length===0) return; if(State.coins < 20) { UI.toast("金币不足!"); return; }
@@ -1014,14 +1278,11 @@
                 } else { setTimeout(()=>this.scroller.scrollLeft = targetScroll, 10); }
             },
             close() { this.screen.style.display = 'none'; visitors.forEach(v=>{clearTimeout(v.timer); if(v.el.parentNode) v.el.parentNode.removeChild(v.el);}); visitors=[]; document.querySelector('.bottom-dock').style.display='none'; },
-            
+
             renderHabitat() {
                 this.area.innerHTML = ''; currentZooAnimals =[]; 
-                
-                let uniqueMap = {};
-                State.animals.forEach(a => { uniqueMap[a.type || 'cat'] = true; });
-                let uniques = Object.keys(uniqueMap);
 
+                let uniques =[...new Set(State.animals.map(a=>a.type || 'cat'))];
                 if(uniques.length === 0) {
                     this.area.innerHTML = '<div style="width:100%;height:100%;display:flex;justify-content:center;align-items:center;color:#5d4037;font-size:20px;">空荡荡的...去拆快递吧！</div>';
                     this.updateUI(); return;
@@ -1030,23 +1291,23 @@
                 uniques.forEach(type => {
                     let anis = State.animals.filter(a=>(a.type || 'cat') === type);
                     let baseInfo = Config.ANIMALS.find(a => a.type === type && a.rarity === 'normal') || anis[0];
-                    
+
                     let z = document.createElement('div'); 
                     z.className = 'habitat-zone'; 
                     z.dataset.type = type; 
                     z.dataset.name = baseInfo.baseName || "动物园"; 
                     z.dataset.count = anis.length; 
                     z.dataset.img = baseInfo.url;
-                    
+
                     z.innerHTML = '<div class="habitat-fence"></div>'; 
                     this.area.appendChild(z);
-                    
+
                     anis.forEach(a => this.spawnAnimal(a, z));
                 });
-                
+
                 EventSystem.renderTrash(); this.updateUI();
             },
-            spawnAnimal(data, zone, sX=null, sY=null) {
+           spawnAnimal(data, zone, sX=null, sY=null) {
                 if(!data.level) data.level=1; if(!data.uuid) data.uuid=Date.now()+Math.random();
                 let wrap = document.createElement('div'); wrap.className='animal-wrapper'; wrap.dataset.uuid=data.uuid; wrap.dataset.level=data.level;
 
@@ -1057,24 +1318,24 @@
 
                 let dir = document.createElement('div'); dir.className='animal-dir'; if(Math.random()>0.5) dir.classList.add('face-left');
                 let evo = Config.EVO[data.level]||Config.EVO[1]; 
-                
+
                 dir.innerHTML = `<div class="animal-scale ${evo.class}"><img src="${data.url}" class="zoo-animal idle" style="animation-delay:${Math.random()*2}s; ${wrap.dataset.panic==='true'?'animation-duration:0.1s':''}"></div>`;
                 wrap.appendChild(dir); zone.appendChild(wrap);
 
                 let img = wrap.querySelector('img');
                 let obj = { wrapper:wrap, dirLayer:dir, img:img, x:x, y:y, container:zone }; 
-                
+
                 let timer = null, long = false;
                 let meagerDestroyer = null;
-                
+
                 const down = () => { 
                     if(MatchState.isPrankMode) return; 
                     long = false; 
-                    
+
                     let comp = window.getComputedStyle(wrap);
                     let curX = comp.left;
                     let curY = comp.top;
-                    
+
                     wrap.style.transition = 'none';
                     wrap.style.left = curX;
                     wrap.style.top = curY;
@@ -1097,7 +1358,7 @@
                         this.merge(data, wrap, zone, cands.length >= 2); 
                     }, 400); 
                 };
-                
+
                 const up = () => { 
                     if(timer) clearTimeout(timer); 
                     if(!long){ 
@@ -1108,7 +1369,7 @@
                         setTimeout(() => img.className='zoo-animal idle', 500); 
                     } 
                 };
-                
+
                 wrap.addEventListener('mousedown', down); 
                 wrap.addEventListener('touchstart', down, {passive:true}); 
                 wrap.addEventListener('mouseup', up); 
@@ -1133,7 +1394,7 @@
                     ani.img.className='zoo-animal idle'; setTimeout(()=>this.animalAI(ani), 2000+Math.random()*3000);
                 }
             },
-            
+           
            merge(data, tWrap, zone, canMerge) {
                 if(!canMerge) { 
                     tWrap.classList.remove('charging'); 
@@ -1142,7 +1403,7 @@
                     tip.style.left = tWrap.style.left; tip.style.top = tWrap.style.top; zone.appendChild(tip); setTimeout(() => tip.remove(), 1000);
                     return; 
                 }
-                
+
                 let tX = parseFloat(tWrap.style.left), tY = parseFloat(tWrap.style.top);
                 let partners = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1)).filter(a=>a.uuid!==data.uuid);
                 partners.forEach(p => {
@@ -1152,28 +1413,24 @@
 
                 setTimeout(() => {
                     let cands = State.animals.filter(a=>a.id===data.id && (a.level||1)===(data.level||1));
-                    let candsUuids =[]; cands.forEach(x => candsUuids.push(x.uuid));
-                    State.animals = State.animals.filter(a => candsUuids.indexOf(a.uuid) === -1);
-                    
+                    State.animals = State.animals.filter(a=>!cands.map(x=>x.uuid).includes(a.uuid));
+
                     let lv = (data.level||1) + (cands.length>=8?3:cands.length>=4?2:1);
                     let newAni;
 
-                    // 修复：不使用 ?. 和 {...}
-                    let isBaseForm = false;
-                    let baseConfig = Config.ANIMALS.find(a => a.id === data.id);
-                    if (baseConfig && baseConfig.rarity === 'normal') isBaseForm = true;
+                    let isBaseForm = Config.ANIMALS.find(a => a.id === data.id)?.rarity === 'normal';
 
                     if (isBaseForm) {
                         let specialCandidates = Config.ANIMALS.filter(a => a.type === data.type && a.rarity === 'rare');
                         if (specialCandidates.length > 0) {
                             let specialData = specialCandidates[Math.floor(Math.random() * specialCandidates.length)];
-                            newAni = Object.assign({}, specialData, {level: 1, uuid: Date.now()+Math.random()});
+                            newAni = {...specialData, level: 1, uuid: Date.now()+Math.random()};
                             lv = 1; 
                         } else {
-                            newAni = Object.assign({}, data, {level: lv, uuid: Date.now()+Math.random()});
+                            newAni = {...data, level: lv, uuid: Date.now()+Math.random()};
                         }
                     } else {
-                        newAni = Object.assign({}, data, {level: lv, uuid: Date.now()+Math.random()});
+                        newAni = {...data, level: lv, uuid: Date.now()+Math.random()};
                     }
 
                     State.animals.push(newAni); Storage.save(); 
@@ -1183,7 +1440,7 @@
                     zone.appendChild(poof); setTimeout(() => poof.remove(), 500);
 
                     tWrap.remove(); partners.forEach(p=>{let w=zone.querySelector(`.animal-wrapper[data-uuid='${p.uuid}']`); if(w) w.remove();});
-                    
+
                     let over = document.createElement('div');
                     over.className = 'reward-dim-layer';
                     over.style.display = 'flex';
@@ -1193,10 +1450,10 @@
                     document.body.appendChild(over);
 
                     this.showNewAnimal(newAni, lv, tX, tY, zone, cands.length, over);
-                    
+
                 }, 520); 
             },
-            
+
             showNewAnimal(data, lv, x, y, zone, count, over) {
                 let pre = Config.EVO[lv] ? Config.EVO[lv].namePrefix : "";
                 let isMutation = (data.rarity === 'rare' && lv === 1);
@@ -1205,7 +1462,7 @@
                 let light = document.createElement('div');
                 light.className = 'evo-light';
                 light.style.cssText = 'position:absolute; width:500px; height:500px; background:radial-gradient(circle,rgba(255,255,255,0.4) 0%,transparent 70%); animation:spinLight 10s linear infinite; pointer-events:none; z-index:1;';
-                
+
                 let imgBox = document.createElement('div');
                 imgBox.style.cssText = 'position:relative; z-index:2; width:150px; height:150px; display:flex; justify-content:center; align-items:center; transform:scale(0); animation: popUp 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards;';
                 let img = document.createElement('img');
@@ -1213,7 +1470,7 @@
                 img.className = Config.EVO[lv] ? Config.EVO[lv].class : '';
                 img.style.cssText = 'width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 10px 10px rgba(0,0,0,0.5));';
                 imgBox.appendChild(img);
-                
+
                 let title = document.createElement('div');
                 title.innerHTML = `<div style="font-size:24px; color:#f39c12; margin-bottom:10px; font-weight:bold; text-shadow:1px 1px 2px #000;">${isMutation ? '✨ 变异成功 ✨' : '✨ 进化成功 ✨'}</div>
                                    <div style="font-size:32px; color:#fff; font-weight:bold; text-shadow:2px 2px 4px #000;">${pre + data.name}</div>
@@ -1237,7 +1494,7 @@
                     imgBox.style.top = iRect.top + 'px';
                     imgBox.style.margin = '0';
                     imgBox.style.animation = 'none';
-                    
+
                     let zRect = zone.getBoundingClientRect();
                     let targetX = zRect.left + x;
                     let targetY = zRect.top + y;
@@ -1253,7 +1510,7 @@
                         over.remove();
                         this.spawnAnimal(data, zone, x, y);
                         this.updateUI();
-                        
+
                         let poofSize = 150 + (count * 20); 
                         let poof = document.createElement('div'); 
                         poof.className = 'merge-poof'; 
@@ -1265,7 +1522,7 @@
                         setTimeout(() => poof.remove(), 600);
 
                     }, 600);
-                    
+
                 }, 2000);
             },
 
@@ -1285,9 +1542,10 @@
 
                 let idx = Math.min(Math.max(0, Math.round(this.area.scrollLeft / (zs[0].offsetWidth||this.area.offsetWidth))), zs.length-1);
                 let z = zs[idx], tid = z.dataset.type, hLv = State.habitatLevels[tid]||1;
-                
+
                 let anis = State.animals.filter(a=>(a.type||'cat') === tid);
-                
+                let maxL = Math.max(1, ...anis.map(a=>a.level||1));
+
                 let repAni = anis.reduce((max, obj) => {
                     let s1 = (obj.rarity === 'rare' ? 1000 : 0) + (obj.level || 1);
                     let s2 = (max.rarity === 'rare' ? 1000 : 0) + (max.level || 1);
@@ -1305,18 +1563,13 @@
                 document.querySelector('.upgrade-cost').innerHTML = `<img src="./img/animal_coin.png" style="width:12px;height:12px;margin-right:2px;"> ${hLv*500}`;
                 document.getElementById('info-level-fill').style.width = `${(hLv%10)*10}%`;
 
-                // 修复：不使用 ** 运算符
-                let prof = 0; anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*Math.pow(a.level||1, 2)));
+                let prof = 0; anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*(a.level||1)**2));
                 document.querySelector('.info-profit').innerHTML = `${prof.toFixed(1)} <img src="./img/animal_coin.png" style="width:12px;height:12px;">/分钟`;
 
                 document.querySelector('.zone-prev').style.display = idx===0?'none':'block'; document.querySelector('.zone-next').style.display = idx===zs.length-1?'none':'block';
                 this.area.dataset.tid = tid; this.area.dataset.cost = hLv*500;
             },
-            scrollZone(dir) { 
-                let scrollAmt = dir * (this.area.firstElementChild ? this.area.firstElementChild.offsetWidth : this.area.offsetWidth);
-                this.area.scrollBy({left: scrollAmt, behavior:'smooth'}); 
-                setTimeout(()=>this.updateUI(), 350); 
-            },
+            scrollZone(dir) { this.area.scrollBy({left: dir * (this.area.firstElementChild?.offsetWidth||this.area.offsetWidth), behavior:'smooth'}); setTimeout(()=>this.updateUI(), 350); },
 
             initVisitors() {
                 visitors.forEach(v=>{clearTimeout(v.timer); if(v.el.parentNode) v.el.parentNode.removeChild(v.el);}); visitors=[];
@@ -1336,7 +1589,7 @@
                     l.appendChild(v.el); visitors.push(v); this.visAI(v, w, h);
                 }
             },
-            visAI(v, w, h) {
+          visAI(v, w, h) {
                 if(Math.random()<0.3) { 
                     v.el.className='visitor'; 
                     v.timer=setTimeout(()=>this.visAI(v,w,h), 1000+Math.random()*2000); 
@@ -1347,7 +1600,7 @@
                     let dur = Math.max(1000, Math.hypot(tX-v.x, tY-v.y)/60*1000);
 
                     requestAnimationFrame(() => {
-                        if (tX < v.x) { v.el.classList.add('face-left'); } else { v.el.classList.remove('face-left'); }
+                        v.el.classList.toggle('face-left', tX < v.x); 
                         v.el.style.transition = `left ${dur}ms linear, top ${dur}ms linear`;
                         v.el.style.left=tX+'px'; v.el.style.top=tY+'px'; v.el.style.zIndex=Math.floor(tY); 
                         v.x=tX; v.y=tY;
@@ -1356,6 +1609,7 @@
                 }
             }
         };
+
 
         const scroller = document.getElementById('zoo-scroller');
         const habArea = document.getElementById('habitat-animal-area');
@@ -1387,7 +1641,7 @@
         scroller.addEventListener('scroll', () => ZooSystem.updateUI());
         habArea.addEventListener('scroll', () => ZooSystem.updateUI());
 
-        // ==================== 7. 事件与玩法(捣乱、派单等) ====================
+        // ==================== 7. 事件与玩法(捣乱、派对等) ====================
         const EventSystem = {
             triggerPanic(threatX) {
                 visitors.forEach(v => {
@@ -1465,44 +1719,120 @@
                     document.getElementById('cut-screen').classList.remove('active');
                 }, 600);
             },
-           startParty() {
-                let gc = document.getElementById('game-container'); gc.classList.add('party-active'); AudioSys.bgmPlay();
+
+            startParty() {
+                let gc = document.getElementById('game-container'); 
+                if (gc.classList.contains('party-active')) {
+                    UI.toast("🎉 派对正在进行中！");
+                    return;
+                }
+                
+                // 动态计算派对价格
+                let cost = State.partyCount === 0 ? 1000 : (State.partyCount === 1 ? 3000 : 5000);
+
+                if (State.coins < cost) {
+                    UI.toast("金币不足！开启派对需要 " + cost + " 金币。");
+                    return;
+                }
+                
+                State.coins -= cost;
+                State.partyCount++;
+                Storage.save();
+                UI.update(); // 这会更新按钮上的价格显示
+                
+                gc.classList.add('party-active'); 
+                AudioSys.bgmPlay();
+                
                 if(partyCoinTimer) clearInterval(partyCoinTimer);
                 partyCoinTimer = setInterval(()=>{
                     if(MatchState.isPrankMode) return; 
-                    let tsArray = document.querySelectorAll('.visitor'); 
-                    if(tsArray.length===0) return;
-                    let ts =[]; for(let i=0; i<tsArray.length; i++) ts.push(tsArray[i]);
+                    let ts = Array.from(document.querySelectorAll('.visitor')); 
+                    if(ts.length===0) return;
                     let lucky = ts[Math.floor(Math.random()*ts.length)], r = lucky.getBoundingClientRect();
                     this.flyCoin(1, r.left+r.width/2, r.top+r.height/2, true);
                 }, 600);
-                setTimeout(()=>{ gc.classList.remove('party-active'); AudioSys.bgmPause(); clearInterval(partyCoinTimer); }, 60000);
+                
+                setTimeout(()=>{ 
+                    gc.classList.remove('party-active'); 
+                    AudioSys.bgmPause(); 
+                    clearInterval(partyCoinTimer); 
+                    
+                    State.gems += 10;
+                    Storage.save();
+                    UI.update();
+                    UI.toast("🎉 狂欢结束！奖励 +10 钻石！");
+
+                    let pR = document.getElementById('zoo-gem-count').getBoundingClientRect();
+                    let c = document.createElement('img'); 
+                    c.src = './img/gem.png'; 
+                    c.style.cssText = `position:fixed; left:${window.innerWidth/2}px; top:${window.innerHeight/2}px; width:80px; height:80px; z-index:99999; pointer-events:none; transition:all 1s cubic-bezier(0.25, 1, 0.5, 1); filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5)); transform: translate(-50%, -50%) scale(1);`; 
+                    document.body.appendChild(c);
+                    
+                    c.offsetHeight; 
+                    setTimeout(() => { 
+                        c.style.left = (pR.left + pR.width/2) + 'px'; 
+                        c.style.top = (pR.top + pR.height/2) + 'px'; 
+                        c.style.opacity = 0; 
+                        c.style.transform = 'translate(-50%, -50%) scale(0.3)'; 
+                    }, 800);
+                    setTimeout(() => c.remove(), 1800);
+
+                }, 60000);
             },
+            
             flyCoin(amt, x, y, toZoo=false) {
-                let c = document.createElement('div'); c.className='fly-coin'; c.style.left=x+'px'; c.style.top=y+'px'; c.style.transition='all 0.8s ease-in-out'; document.body.appendChild(c);
-                let pR = document.getElementById(toZoo?'zoo-coin-count':'coin-pill').getBoundingClientRect();
-                setTimeout(()=>{ c.style.left=(pR.left+pR.width/2-15)+'px'; c.style.top=(pR.top+pR.height/2-15)+'px'; c.style.opacity=0; c.style.transform='scale(0.5)'; }, 50);
-                setTimeout(()=>{ c.remove(); State.coins+=amt; Storage.save(); }, 850);
+                let c = document.createElement('img'); 
+                c.src = './img/animal_coin.png'; 
+                c.style.cssText = `position:fixed; left:${x}px; top:${y}px; width:30px; height:30px; z-index:99999; pointer-events:none; transition:all 0.8s cubic-bezier(0.25, 1, 0.5, 1); filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transform: scale(1);`; 
+                document.body.appendChild(c);
+                
+                c.offsetHeight; 
+                
+                let targetId = toZoo ? 'zoo-coin-count' : 'coin-pill';
+                let pR = document.getElementById(targetId).getBoundingClientRect();
+                
+                setTimeout(() => { 
+                    c.style.left = (pR.left + pR.width/2 - 15) + 'px'; 
+                    c.style.top = (pR.top + pR.height/2 - 15) + 'px'; 
+                    c.style.opacity = 0; 
+                    c.style.transform = 'scale(0.5)'; 
+                }, 50);
+                
+                setTimeout(() => { 
+                    c.remove(); 
+                    State.coins += amt; 
+                    Storage.save(); 
+                }, 850);
             }
         };
         ZooSystem.area.addEventListener('click', (e) => { if(MatchState.isPrankMode) EventSystem.throwPrankTrash(e); });
 
         setInterval(() => {
-            if (State.animals.length===0 || State.trashCount>0) return;
-            let prof = 0;
-            let uniqueTypes = {};
-            State.animals.forEach(function(a) { uniqueTypes[a.type||'cat'] = true; });
-            
-            Object.keys(uniqueTypes).forEach(tid => {
-                let anis = State.animals.filter(a=>(a.type||'cat')===tid), hLv = State.habitatLevels[tid]||1;
-                anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*Math.pow(a.level||1, 2)));
-            });
-            State.coins += prof/12;
-            if (Math.floor(State.coins) !== parseInt(document.getElementById('zoo-coin-count').innerText)) Storage.save();
+            if (State.animals.length > 0 && State.trashCount <= 0) {
+                let prof = 0;[...new Set(State.animals.map(a=>a.type||'cat'))].forEach(tid => {
+                    let anis = State.animals.filter(a=>(a.type||'cat')===tid), hLv = State.habitatLevels[tid]||1;
+                    anis.forEach(a => prof += (3.0/anis.length)+((hLv-1)*1.5/anis.length)+(0.5*(a.level||1)**2));
+                });
+                State.coins += prof/12;
+            }
+
+            let now = Date.now();
+            if (State.energy < 100) {
+                let minutesPassed = Math.floor((now - State.lastEnergyTime) / 60000);
+                if (minutesPassed > 0) {
+                    State.energy = Math.min(100, State.energy + minutesPassed * 10);
+                    State.lastEnergyTime = now;
+                    UI.toast("⚡ 体力恢复了！");
+                }
+            } else {
+                State.lastEnergyTime = now;
+            }
+
+            Storage.save();
         }, 5000);
 
         // ==================== 8. 启动 ====================
-        window.addEventListener('load', () => { SpineManager.init(); Storage.load(); ZooSystem.open(true); });
+        window.addEventListener('load', () => { SpineManager.init(); Storage.load(); ZooSystem.open(true); UI.checkMainRedDot(); });
     </script>
 </body>
 </html>
