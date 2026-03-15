@@ -1,0 +1,76 @@
+
+loding.png
+size: 460,460
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+图层 1
+  rotate: true
+  xy: 391, 321
+  size: 71, 55
+  orig: 71, 55
+  offset: 0, 0
+  index: -1
+图层 2
+  rotate: false
+  xy: 0, 212
+  size: 389, 248
+  orig: 389, 248
+  offset: 0, 0
+  index: -1
+图层 3
+  rotate: true
+  xy: 218, 82
+  size: 128, 118
+  orig: 131, 118
+  offset: 0, 0
+  index: -1
+图层 4
+  rotate: false
+  xy: 338, 76
+  size: 94, 28
+  orig: 94, 28
+  offset: 0, 0
+  index: -1
+图层 5
+  rotate: true
+  xy: 392, 141
+  size: 32, 68
+  orig: 32, 69
+  offset: 0, 1
+  index: -1
+图层 6
+  rotate: true
+  xy: 338, 106
+  size: 67, 52
+  orig: 67, 52
+  offset: 0, 0
+  index: -1
+图层 7
+  rotate: true
+  xy: 391, 394
+  size: 66, 60
+  orig: 66, 60
+  offset: 0, 0
+  index: -1
+图层 7 拷贝
+  rotate: false
+  xy: 0, 64
+  size: 216, 146
+  orig: 217, 146
+  offset: 1, 0
+  index: -1
+图层 7 拷贝 7
+  rotate: true
+  xy: 391, 248
+  size: 71, 55
+  orig: 71, 55
+  offset: 0, 0
+  index: -1
+图层 7 拷贝 8
+  rotate: true
+  xy: 391, 175
+  size: 71, 55
+  orig: 71, 55
+  offset: 0, 0
+  index: -1
