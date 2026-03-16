@@ -259,6 +259,7 @@
 <body>
     <div id="game-container">
         
+        <!-- 带有进度条的 Loading 遮罩层 -->
         <div id="loading-screen">
             <div id="loading-ui">
                 <div class="loading-text" id="loading-txt-msg">装载资源中...</div>
@@ -268,6 +269,10 @@
                 </div>
             </div>
         </div>
+
+        <!-- 找回丢失的UI元素 -->
+        <div id="attack-alert-banner"></div>
+        <div id="global-toast" class="toast-msg"></div>
 
         <div id="cut-screen" class="cut-screen">🚀 正在前往邻居家...</div>
 
@@ -409,7 +414,41 @@
             spineDataMeager: null,
             spineDataLoading: null,
             isError: false,
+
+            // 【终极核心修复】使用 requestAnimationFrame 双重延迟，彻底切断与 Pixi Ticker 渲染栈的联系
+            safeRemove(anim) {
+                if (!anim) return;
+                
+                // 第一步：立刻在视觉和逻辑上停止它
+                try {
+                    anim.visible = false;
+                    anim.autoUpdate = false;
+                    if (anim.state) anim.state.clearListeners();
+                } catch(e) {}
+
+                // 第二步：将其彻底脱离渲染队列 (必须等当前帧彻底画完)
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        try {
+                            if (anim.parent) anim.parent.removeChild(anim);
+                            if (typeof anim.destroy === 'function') {
+                                anim.destroy({ children: true }); 
+                            }
+                        } catch(e) {
+                            console.warn("清理旧Spine时忽略错误:", e);
+                        }
+                    });
+                });
+            },
+
+            checkEmpty() {
+                if (this.app && this.app.stage && this.app.stage.children.length === 0) {
+                    this.app.view.style.display = 'none';
+                }
+            },
+
             init(onReady) {
+                // 解决 PIXI.Sprite 贴图为空的报错
                 if (window.PIXI && PIXI.Sprite) {
                     const origSet = Object.getOwnPropertyDescriptor(PIXI.Sprite.prototype, 'texture').set;
                     Object.defineProperty(PIXI.Sprite.prototype, 'texture', {
@@ -421,13 +460,10 @@
                     });
                 }
 
-                // 绑定到 game-container 实现完美尺寸包裹
-                this.app = new PIXI.Application({ resizeTo: document.getElementById('game-container'), transparent: true });
-                this.app.view.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; display:none;';
-                
-                let ls = document.getElementById('loading-screen');
-                if(ls) ls.insertBefore(this.app.view, ls.firstChild);
-                else document.getElementById('game-container').appendChild(this.app.view);
+                // 绑定到 window，最高层级，绝对不会被任何元素遮挡！
+                this.app = new PIXI.Application({ resizeTo: window, transparent: true });
+                this.app.view.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; z-index:999999; pointer-events:none; display:none;';
+                document.body.appendChild(this.app.view);
 
                 // ============ 进度条模拟系统 ============
                 let progressVal = 0;
@@ -506,13 +542,18 @@
                 let lsText = document.querySelector('.loading-text');
                 if (lsText) lsText.style.display = 'none';
 
+                // 清空舞台残留（以防万一）
+                if (this.app.stage.children.length > 0) {
+                    let children = [...this.app.stage.children];
+                    children.forEach(child => this.safeRemove(child));
+                }
+
                 this.app.view.style.display = 'block';
                 const anim = new PIXI.spine.Spine(this.spineDataLoading);
                 
-                // 相对于画布内部居中
-                anim.x = this.app.screen.width / 2;
-                anim.y = this.app.screen.height / 2 - 50; 
-                let scaleRatio = Math.min(this.app.screen.width / 800, this.app.screen.height / 800, 1);
+                anim.x = window.innerWidth / 2;
+                anim.y = window.innerHeight / 2 - 50; 
+                let scaleRatio = Math.min(window.innerWidth / 800, window.innerHeight / 800, 1);
                 anim.scale.set(scaleRatio); 
                 
                 this.app.stage.addChild(anim);
@@ -521,21 +562,20 @@
                 let finish = () => {
                     if(isFinished) return;
                     isFinished = true;
-                    if(anim.parent) this.app.stage.removeChild(anim);
-                    anim.destroy();
                     
-                    this.app.view.style.position = 'fixed';
-                    this.app.view.style.zIndex = '999999';
-                    this.app.view.style.display = 'none';
-                    document.body.appendChild(this.app.view);
-                    
-                    onComplete();
+                    this.safeRemove(anim);
+                    setTimeout(() => {
+                        this.checkEmpty();
+                        onComplete();
+                    }, 50);
                 };
 
                 let availableAnims = anim.spineData.animations.map(a => a.name);
-                let targetAnim = 'open'; // 将 loading 动画名改为 open
-                if (!availableAnims.includes(targetAnim) && availableAnims.length > 0) {
-                    targetAnim = availableAnims[0]; 
+                let targetAnim = 'open'; 
+                if (!availableAnims.includes(targetAnim)) {
+                    if (availableAnims.includes('enter')) targetAnim = 'enter';
+                    else if (availableAnims.includes('animation')) targetAnim = 'animation';
+                    else if (availableAnims.length > 0) targetAnim = availableAnims[0]; 
                 }
 
                 try { 
@@ -548,7 +588,6 @@
                 let minTimePassed = false;
                 let animCompleted = false;
 
-                // 强制最少看 2 秒
                 setTimeout(() => { 
                     minTimePassed = true; 
                     if(animCompleted) finish(); 
@@ -556,50 +595,77 @@
 
                 anim.state.addListener({
                     complete: (entry) => {
-                        // 动态监听实际播放的动画名称是否结束
-                        if (entry.animation.name === targetAnim) {
-                            animCompleted = true;
-                            if(minTimePassed) finish();
-                        }
+                        animCompleted = true;
+                        if(minTimePassed) finish();
                     }
                 });
 
-                // 兜底 5 秒
                 setTimeout(finish, 5000);
             },
 
-            // 通用开箱动画，支持动态识别容错
             play(animName, onMiddle, onComplete) {
                 if (!this.spineDataOpenEgg) return false;
-                this.app.view.style.display = 'block';
-                const anim = new PIXI.spine.Spine(this.spineDataOpenEgg);
-                anim.x = window.innerWidth / 2;
-                anim.y = window.innerHeight / 2;
-                
-                let availableAnims = anim.spineData.animations.map(a => a.name);
-                if (!availableAnims.includes(animName)) {
-                    if (availableAnims.includes('enter')) animName = 'enter';
-                    else if (availableAnims.length > 0) animName = availableAnims[0];
-                    else {
-                        this.app.stage.removeChild(anim); anim.destroy(); this.app.view.style.display = 'none';
-                        return false;
-                    }
+
+                // 【核心执行】播放前强制清场！绝对不留任何旧的 Loading 残影
+                if (this.app.stage.children.length > 0) {
+                    let children = [...this.app.stage.children];
+                    children.forEach(child => this.safeRemove(child));
                 }
 
+                this.app.view.style.display = 'block';
+                const anim = new PIXI.spine.Spine(this.spineDataOpenEgg);
+                
+                anim.x = window.innerWidth / 2;
+                anim.y = window.innerHeight / 2;
+                // 稍微放大特效
+                let scaleRatio = Math.min(window.innerWidth / 800, window.innerHeight / 800, 1) * 1.5;
+                anim.scale.set(scaleRatio);
+                
                 this.app.stage.addChild(anim);
-
-                try { anim.state.setAnimation(0, animName, false); } 
-                catch(e) {
-                    this.app.stage.removeChild(anim); anim.destroy(); this.app.view.style.display = 'none';
+                
+                try { 
+                    // 【绝对强制】用户指名道姓要求播放 open1 或 open2，绝不做任何其他模糊匹配替换！
+                    anim.state.setAnimation(0, animName, false); 
+                } catch(e) {
+                    console.error("❌ Spine 找不到动作:", animName, e);
+                    this.safeRemove(anim);
+                    this.checkEmpty();
                     return false;
                 }
 
-                setTimeout(() => onMiddle(), 750);
-                setTimeout(() => {
-                    this.app.stage.removeChild(anim); anim.destroy();
-                    if(this.app.stage.children.length === 0) this.app.view.style.display = 'none';
-                    onComplete();
-                }, 2000);
+                let isMiddleTriggered = false;
+                let doMiddle = () => {
+                    if (isMiddleTriggered) return;
+                    isMiddleTriggered = true;
+                    onMiddle();
+                };
+
+                let isFinished = false;
+                let finish = () => {
+                    if (isFinished) return;
+                    isFinished = true;
+                    this.safeRemove(anim);
+                    setTimeout(() => {
+                        this.checkEmpty();
+                        onComplete();
+                    }, 50);
+                };
+
+                // 监听事件与结束
+                anim.state.addListener({
+                    event: (entry, event) => {
+                        doMiddle();
+                    },
+                    complete: (entry) => {
+                        doMiddle();
+                        setTimeout(finish, 100);
+                    }
+                });
+
+                // 保底，防止没有触发任何事件导致卡死
+                setTimeout(doMiddle, 1200);
+                setTimeout(finish, 2500);
+
                 return true;
             },
 
@@ -621,8 +687,8 @@
                 try {
                     anim.state.setAnimation(0, targetAnim, false);
                 } catch(e) {
-                    this.app.stage.removeChild(anim); anim.destroy();
-                    if(this.app.stage.children.length === 0) this.app.view.style.display = 'none';
+                    this.safeRemove(anim);
+                    this.checkEmpty();
                     return null;
                 }
 
@@ -630,13 +696,8 @@
                 let destroyFn = () => {
                     if(isDestroyed) return;
                     isDestroyed = true;
-                    try {
-                        this.app.stage.removeChild(anim);
-                        anim.destroy();
-                        if(this.app.stage.children.length === 0) {
-                            this.app.view.style.display = 'none';
-                        }
-                    } catch(e) {}
+                    this.safeRemove(anim);
+                    setTimeout(() => this.checkEmpty(), 50);
                 };
 
                 setTimeout(destroyFn, 3500); 
@@ -665,6 +726,7 @@
                 for(let i=1; i<=4; i++) {
                     arr.push({ id: `capybara${i}`, type: 'capybara', baseName: '呆萌水豚', name: `特殊水豚${i}`, url: `./img/capybara${i}.png`, rarity: 'rare' });
                 }
+
                 return arr;
             })(),
 
@@ -740,7 +802,7 @@
 
         // ==================== 4. UI更新与通用交互 ====================
         const UI = {
-            toast(msg) { let t = document.getElementById('global-toast'); t.innerText=msg; t.style.opacity=1; setTimeout(()=>t.style.opacity=0, 3000); },
+            toast(msg) { let t = document.getElementById('global-toast'); if(t) { t.innerText=msg; t.style.opacity=1; setTimeout(()=>t.style.opacity=0, 3000); } },
             update() { 
                 let c = Math.floor(State.coins); 
                 document.getElementById('coin-count').innerText = c; 
