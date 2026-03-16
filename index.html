@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
     <title>动物园大亨：合成变异版 (纯净单图终极版)</title>
     <!-- 屏蔽 favicon 报错 -->
     <link rel="icon" href="data:;base64,=">
@@ -16,7 +16,7 @@
         /* ==================== 1. 基础与移动端手感优化 ==================== */
         * { 
             box-sizing: border-box; 
-            touch-action: pan-x pan-y; 
+            touch-action: none; 
             -webkit-tap-highlight-color: transparent !important;
             -webkit-touch-callout: none !important;
             -webkit-user-select: none !important;
@@ -24,12 +24,21 @@
             outline: none !important;
         }
 
-        img {
-            -webkit-user-drag: none;
-            pointer-events: none;
-        }
+        img { -webkit-user-drag: none; pointer-events: none; }
 
         html, body { width: 100%; height: 100%; margin: 0; padding: 0; position: fixed; overflow: hidden; overscroll-behavior: none; background-color: #2c3e50; font-family: "Microsoft YaHei", sans-serif; display: flex; justify-content: center; align-items: center; }
+
+        /* ==================== 全新 Loading 遮罩层 ==================== */
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #2c3e50; z-index: 999998; display: flex; justify-content: center; align-items: center; transition: opacity 0.6s ease; flex-direction: column; }
+        
+        #loading-ui { position: absolute; bottom: 15%; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        .loading-text { color: #f1c40f; font-size: 16px; font-weight: bold; margin-bottom: 10px; animation: pulse 1s infinite alternate; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        @keyframes pulse { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+        
+        .progress-wrapper { width: 70%; max-width: 300px; position: relative; }
+        .progress-bg { width: 100%; height: 18px; background: rgba(0,0,0,0.4); border-radius: 10px; overflow: hidden; border: 2px solid #5d4037; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
+        .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #f1c40f, #f39c12); transition: width 0.1s linear; border-radius: 8px; box-shadow: 0 2px 5px rgba(243,156,18,0.5); }
+        .progress-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-weight: bold; font-size: 12px; text-shadow: 1px 1px 2px #000; }
 
         #game-container { 
             width: 100%; 
@@ -45,12 +54,10 @@
             padding-bottom: env(safe-area-inset-bottom, 0px); 
         }
 
-        @media (min-aspect-ratio: 3/4) { 
+        @media (min-width: 750px) { 
             #game-container { 
                 height: 94%; 
-                width: auto; 
-                max-width: calc(94vh * (750 / 1624)); 
-                aspect-ratio: 750 / 1624; 
+                width: 46vh; 
                 border-radius: 30px; 
                 border: 12px solid #444; 
                 margin: auto; 
@@ -62,13 +69,13 @@
         .btn-blue { background: #3498db; } .btn-green { background: #2ecc71; } .btn-orange { background: #f39c12; } .btn-red { background: #e74c3c; } .btn-purple { background: #9b59b6; }
 
         /* ==================== 2. 消除界面 ==================== */
-        #game-header { background: white; display: flex; flex-direction: column; padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 20; position: relative; gap: 5px; }
-        .status-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .info-pill { padding: 4px 8px; border-radius: 20px; font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 4px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); }
+        #game-header { background: white; display: flex; flex-direction: column; padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 20; position: relative; margin-bottom: 5px; }
+        .status-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom:5px; }
+        .info-pill { padding: 4px 8px; border-radius: 20px; font-weight: 800; font-size: 13px; display: flex; align-items: center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); margin-right: 5px;}
         
         .pill-energy { background-color: #ff7675; color: #fff; text-shadow: 1px 1px 0 #d63031; box-shadow: inset 0 2px 5px rgba(214,48,49,0.5); }
         .pill-gem { background-color: #9b59b6; color: #fff; text-shadow: 1px 1px 0 #8e44ad; box-shadow: inset 0 2px 5px rgba(142,68,173,0.5); }
-        .pill-coin { background-color: #f1c40f; color: #946d04; text-shadow: 1px 1px 0 #fff; }
+        .pill-coin { background-color: #f1c40f; color: #946d04; text-shadow: 1px 1px 0 #fff; margin-right: 0;}
         
         .info-row { display: flex; flex-direction: column; align-items: center; width: 100%; position: relative; }
         .level-text { font-size: 14px; font-weight: bold; color: #666; margin-bottom: 2px; }
@@ -77,20 +84,20 @@
         #temp-dock.has-items::after { display: none; }
         .mini-reward { width: 35px; height: 35px; object-fit: contain; margin: 0 -2px; animation: bounceIn 0.5s; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3)); }
 
-        #map-area { flex: 1; position: relative; overflow: hidden; background-color: #f0f2f5; z-index: 10; }
+        #map-area { flex: 1; position: relative; overflow: hidden; background-color: #f0f2f5; z-index: 10; touch-action: none; }
         #extra-dock { position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); width: 230px; height: 100px; z-index: 50; pointer-events: none; }
-        #dock-area { height: 130px; background-color: #5d4037; border-top: 4px solid #3e2723; display: flex; justify-content: flex-start; align-items: center; padding: 0 5px; z-index: 30; gap: 2px; }
-        #tools-area { height: 80px; background: #fff; display: flex; justify-content: center; align-items: center; gap: 25px; z-index: 25; border-top: 1px solid #ddd; }
+        #dock-area { height: 130px; background-color: #5d4037; border-top: 4px solid #3e2723; display: flex; justify-content: flex-start; align-items: center; padding: 0 5px; z-index: 30; }
+        #tools-area { height: 80px; background: #fff; display: flex; justify-content: space-evenly; align-items: center; padding: 0 20px; z-index: 25; border-top: 1px solid #ddd; }
 
         .tool-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: 2px solid #ccc; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 0 #bbb; transition: all 0.1s; font-size: 20px; position: relative; }
         .tool-btn:active { transform: translateY(4px); box-shadow: none; }
         .tool-btn span { font-size: 10px; font-weight: bold; color: #555; margin-top: -2px; }
         .tool-cost { position: absolute; top: -10px; right: -10px; background: #f1c40f; color: #946d04; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; }
 
-        .tile { position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); cursor: pointer; z-index: 10; pointer-events: auto; }
+        .tile { position: absolute; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(1px 4px 2px rgba(0,0,0,0.3)); cursor: pointer; z-index: 10; pointer-events: auto; touch-action: none; }
         .tile:active { filter: brightness(0.8) drop-shadow(1px 2px 1px rgba(0,0,0,0.3)); }
         .tile.disabled { filter: brightness(0.4) grayscale(0.5) !important; pointer-events: none !important; }
-        .tile.in-dock { position: relative !important; margin: 0; filter: none; width: 13.5% !important; height: 80% !important; }
+        .tile.in-dock { position: relative !important; margin: 0 1px; filter: none; width: 13.5% !important; height: 80% !important; }
         .tile.in-extra { position: absolute !important; transform: scale(0.8) !important; pointer-events: auto !important; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)) !important; transition: all 0.3s ease; }
 
         /* ==================== 3. 动物园 & 游客 ==================== */
@@ -127,7 +134,7 @@
         .visitor-bubble { position: absolute; background: white; border: 2px solid #5d4037; border-radius: 12px; padding: 4px 8px; font-size: 14px; font-weight: bold; color: #d35400; z-index: 10000; pointer-events: none; transform: translateX(-30%); box-shadow: 0 4px 0 rgba(0,0,0,0.1); animation: popUp 0.3s cubic-bezier(0.17, 0.89, 0.32, 1.49); white-space: nowrap; }
 
         /* ================= 4. 动物与特效 ================= */
-        .animal-wrapper { position: absolute; width: 60px; height: 60px; pointer-events: auto; cursor: pointer; display: flex; justify-content: center; align-items: flex-end; transition: left linear, top linear; }
+        .animal-wrapper { position: absolute; width: 60px; height: 60px; pointer-events: auto; cursor: pointer; display: flex; justify-content: center; align-items: flex-end; transition: left linear, top linear; touch-action: none; }
         .animal-dir { width: 100%; height: 100%; display: flex; justify-content: center; align-items: flex-end; transform-origin: center bottom; transition: transform 0.2s; }
         .animal-dir.face-left { transform: scaleX(-1); }
         .animal-scale { width: 100%; height: 100%; display: flex; justify-content: center; align-items: flex-end; transform-origin: center bottom; transition: all 0.3s; }
@@ -142,6 +149,11 @@
         .zoo-animal.idle { animation: aniIdle 2s infinite ease-in-out; }
         .zoo-animal.jump { animation: aniJump 0.5s ease-in-out; }
         .zoo-animal.walking { animation: aniWalk 0.35s infinite linear; }
+
+        /* ================= 掉落宝石样式 ================= */
+        .dropped-gem { position: absolute; width: 25px; height: 25px; object-fit: contain; cursor: pointer; z-index: 1000; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4)); animation: gemDrop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.27), gemFloat 2s infinite ease-in-out 0.5s; touch-action: none; pointer-events: auto; }
+        @keyframes gemDrop { 0% { transform: translateY(-30px) scale(0); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes gemFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
         /* ================= 5. 动画与UI ================= */
         @keyframes walkRight { 0% { transform: scale(0.6) rotate(-5deg); } 50% { transform: scale(0.6) rotate(5deg); } 100% { transform: scale(0.6) rotate(-5deg); } }
@@ -245,8 +257,18 @@
     </style>
 </head>
 <body>
-    <div id="attack-alert-banner"></div><div id="global-toast" class="toast-msg"></div>
     <div id="game-container">
+        
+        <div id="loading-screen">
+            <div id="loading-ui">
+                <div class="loading-text" id="loading-txt-msg">装载资源中...</div>
+                <div class="progress-wrapper">
+                    <div class="progress-bg"><div class="progress-fill" id="loading-fill"></div></div>
+                    <div class="progress-text" id="loading-percent">0%</div>
+                </div>
+            </div>
+        </div>
+
         <div id="cut-screen" class="cut-screen">🚀 正在前往邻居家...</div>
 
         <!-- 头部数据区 -->
@@ -385,8 +407,9 @@
             app: null, 
             spineDataOpenEgg: null, 
             spineDataMeager: null,
+            spineDataLoading: null,
             isError: false,
-            init() {
+            init(onReady) {
                 if (window.PIXI && PIXI.Sprite) {
                     const origSet = Object.getOwnPropertyDescriptor(PIXI.Sprite.prototype, 'texture').set;
                     Object.defineProperty(PIXI.Sprite.prototype, 'texture', {
@@ -398,39 +421,177 @@
                     });
                 }
 
-                this.app = new PIXI.Application({ resizeTo: window, transparent: true });
-                this.app.view.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; pointer-events:none; display:none;';
-                document.body.appendChild(this.app.view);
+                // 绑定到 game-container 实现完美尺寸包裹
+                this.app = new PIXI.Application({ resizeTo: document.getElementById('game-container'), transparent: true });
+                this.app.view.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; display:none;';
+                
+                let ls = document.getElementById('loading-screen');
+                if(ls) ls.insertBefore(this.app.view, ls.firstChild);
+                else document.getElementById('game-container').appendChild(this.app.view);
+
+                // ============ 进度条模拟系统 ============
+                let progressVal = 0;
+                let fill = document.getElementById('loading-fill');
+                let pct = document.getElementById('loading-percent');
+                let txt = document.getElementById('loading-txt-msg');
+
+                let simTimer = setInterval(() => {
+                    if(progressVal < 95) {
+                        progressVal += Math.random() * 5; 
+                        if(progressVal > 95) progressVal = 95;
+                        if(fill) fill.style.width = progressVal + '%';
+                        if(pct) pct.innerText = Math.floor(progressVal) + '%';
+                    }
+                }, 100);
+
+                this.app.loader.onProgress.add((loader) => {
+                    let real = loader.progress;
+                    if(real > progressVal && real <= 95) {
+                        progressVal = real;
+                    }
+                });
 
                 this.app.loader
                     .add('openegg', './animation/openegg.json')
                     .add('meager', './animation/meager.json')
+                    .add('loading', './animation/loading.json') 
                     .load((loader, res) => {
-                        if (res.openegg && res.openegg.spineData) {
-                            this.spineDataOpenEgg = res.openegg.spineData;
-                        }
-                        if (res.meager && res.meager.spineData) {
-                            this.spineDataMeager = res.meager.spineData;
-                        }
+                        if (res.openegg && res.openegg.spineData) this.spineDataOpenEgg = res.openegg.spineData;
+                        if (res.meager && res.meager.spineData) this.spineDataMeager = res.meager.spineData;
+                        if (res.loading && res.loading.spineData) this.spineDataLoading = res.loading.spineData;
+                        
+                        if(txt) txt.innerText = "即将进入...";
+
+                        this.playLoading(() => {
+                            clearInterval(simTimer);
+                            if(fill) fill.style.width = '100%';
+                            if(pct) pct.innerText = '100%';
+
+                            setTimeout(() => {
+                                let screen = document.getElementById('loading-screen');
+                                if (screen) { 
+                                    screen.style.opacity = '0'; 
+                                    setTimeout(() => screen.style.display = 'none', 600); 
+                                }
+                                if(onReady) onReady();
+                            }, 200);
+                        });
                     });
-                this.app.loader.onError.add(() => { this.isError = true; });
+                    
+                this.app.loader.onError.add((err) => { 
+                    this.isError = true; 
+                    clearInterval(simTimer);
+                    if(fill) fill.style.width = '100%';
+                    if(pct) pct.innerText = '100%';
+                    if(txt) txt.innerText = "动画加载失败，正在进入...";
+                    
+                    setTimeout(() => {
+                        let screen = document.getElementById('loading-screen');
+                        if (screen) { 
+                            screen.style.opacity = '0'; 
+                            setTimeout(() => screen.style.display = 'none', 600); 
+                        }
+                        UI.toast("部分动画加载失败，已跳过");
+                        if(onReady) onReady();
+                    }, 1000);
+                });
             },
 
+            playLoading(onComplete) {
+                if (!this.spineDataLoading) {
+                    setTimeout(onComplete, 500);
+                    return;
+                }
+                
+                let lsText = document.querySelector('.loading-text');
+                if (lsText) lsText.style.display = 'none';
+
+                this.app.view.style.display = 'block';
+                const anim = new PIXI.spine.Spine(this.spineDataLoading);
+                
+                // 相对于画布内部居中
+                anim.x = this.app.screen.width / 2;
+                anim.y = this.app.screen.height / 2 - 50; 
+                let scaleRatio = Math.min(this.app.screen.width / 800, this.app.screen.height / 800, 1);
+                anim.scale.set(scaleRatio); 
+                
+                this.app.stage.addChild(anim);
+
+                let isFinished = false;
+                let finish = () => {
+                    if(isFinished) return;
+                    isFinished = true;
+                    if(anim.parent) this.app.stage.removeChild(anim);
+                    anim.destroy();
+                    
+                    this.app.view.style.position = 'fixed';
+                    this.app.view.style.zIndex = '999999';
+                    this.app.view.style.display = 'none';
+                    document.body.appendChild(this.app.view);
+                    
+                    onComplete();
+                };
+
+                let availableAnims = anim.spineData.animations.map(a => a.name);
+                let targetAnim = 'open'; // 将 loading 动画名改为 open
+                if (!availableAnims.includes(targetAnim) && availableAnims.length > 0) {
+                    targetAnim = availableAnims[0]; 
+                }
+
+                try { 
+                    anim.state.setAnimation(0, targetAnim, false); 
+                } catch(e) {
+                    finish();
+                    return;
+                }
+
+                let minTimePassed = false;
+                let animCompleted = false;
+
+                // 强制最少看 2 秒
+                setTimeout(() => { 
+                    minTimePassed = true; 
+                    if(animCompleted) finish(); 
+                }, 2000);
+
+                anim.state.addListener({
+                    complete: (entry) => {
+                        // 动态监听实际播放的动画名称是否结束
+                        if (entry.animation.name === targetAnim) {
+                            animCompleted = true;
+                            if(minTimePassed) finish();
+                        }
+                    }
+                });
+
+                // 兜底 5 秒
+                setTimeout(finish, 5000);
+            },
+
+            // 通用开箱动画，支持动态识别容错
             play(animName, onMiddle, onComplete) {
                 if (!this.spineDataOpenEgg) return false;
                 this.app.view.style.display = 'block';
                 const anim = new PIXI.spine.Spine(this.spineDataOpenEgg);
                 anim.x = window.innerWidth / 2;
                 anim.y = window.innerHeight / 2;
+                
+                let availableAnims = anim.spineData.animations.map(a => a.name);
+                if (!availableAnims.includes(animName)) {
+                    if (availableAnims.includes('enter')) animName = 'enter';
+                    else if (availableAnims.length > 0) animName = availableAnims[0];
+                    else {
+                        this.app.stage.removeChild(anim); anim.destroy(); this.app.view.style.display = 'none';
+                        return false;
+                    }
+                }
+
                 this.app.stage.addChild(anim);
 
                 try { anim.state.setAnimation(0, animName, false); } 
                 catch(e) {
-                    try { anim.state.setAnimation(0, 'open1', false); } 
-                    catch(e2) {
-                        this.app.stage.removeChild(anim); anim.destroy(); this.app.view.style.display = 'none';
-                        return false;
-                    }
+                    this.app.stage.removeChild(anim); anim.destroy(); this.app.view.style.display = 'none';
+                    return false;
                 }
 
                 setTimeout(() => onMiddle(), 750);
@@ -451,8 +612,14 @@
                 anim.y = y;
                 this.app.stage.addChild(anim);
 
+                let availableAnims = anim.spineData.animations.map(a => a.name);
+                let targetAnim = 'enter';
+                if (!availableAnims.includes(targetAnim) && availableAnims.length > 0) {
+                    targetAnim = availableAnims[0];
+                }
+
                 try {
-                    anim.state.setAnimation(0, 'enter', false);
+                    anim.state.setAnimation(0, targetAnim, false);
                 } catch(e) {
                     this.app.stage.removeChild(anim); anim.destroy();
                     if(this.app.stage.children.length === 0) this.app.view.style.display = 'none';
@@ -498,7 +665,6 @@
                 for(let i=1; i<=4; i++) {
                     arr.push({ id: `capybara${i}`, type: 'capybara', baseName: '呆萌水豚', name: `特殊水豚${i}`, url: `./img/capybara${i}.png`, rarity: 'rare' });
                 }
-
                 return arr;
             })(),
 
@@ -525,7 +691,8 @@
             bgmPause() { this.bgm.pause(); },
             land() {}, heavy() {}, sweep() {}, match() {}, win() {}, jump() {}
         };
-        window.addEventListener('click', () => AudioSys.init(), { once: true });
+        window.addEventListener('touchstart', () => AudioSys.init(), { once: true, passive: true });
+        window.addEventListener('mousedown', () => AudioSys.init(), { once: true });
 
         // ==================== 3. 状态与存储 ====================
         let State = { coins: 0, energy: 100, gems: 0, lastEnergyTime: 0, animals:[], level: 1, habitatLevels: {}, trashCount: 0, claimedBookRewards: [], shopRecords: {}, partyCount: 0 };
@@ -587,7 +754,6 @@
 
                 document.getElementById('level-num').innerText = State.level;
 
-                // 动态更新派对价格
                 let partyCost = State.partyCount === 0 ? 1000 : (State.partyCount === 1 ? 3000 : 5000);
                 let partyCostEl = document.getElementById('party-cost-text');
                 if(partyCostEl) partyCostEl.innerText = partyCost;
@@ -944,7 +1110,10 @@
                     div.style.left = pos.x+'px'; div.style.top = pos.y+'px'; div.style.zIndex = 100 + pos.l*100 + i;
                     div.style.width = W + 'px'; div.style.height = H + 'px';
                     let tile = { id: i, el: div, type: types[i], x: pos.x, y: pos.y, l: pos.l, w: W, h: H, inDock: false, isEx: false, isRm: false, oX: pos.x, oY: pos.y, oZ: div.style.zIndex };
-                    div.onpointerdown = (e) => { e.preventDefault(); e.stopPropagation(); this.clickTile(tile); };
+                    
+                    div.addEventListener('touchstart', (e) => { e.preventDefault(); this.clickTile(tile); }, {passive: false});
+                    div.addEventListener('mousedown', (e) => { e.preventDefault(); this.clickTile(tile); });
+                    
                     this.mapEl.appendChild(div); MatchState.tiles.push(tile);
                 });
             },
@@ -1056,7 +1225,7 @@
                     } else { 
                         for(let i=0; i<3; i++) {
                             setTimeout(() => {
-                                EventSystem.flyCoin(5, sX - 15 + (Math.random()-0.5)*40, sY - 15 + (Math.random()-0.5)*40, false); 
+                                EventSystem.flyItem('coin', 5, sX - 15 + (Math.random()-0.5)*40, sY - 15 + (Math.random()-0.5)*40, false); 
                             }, i * 100);
                         }
                         if (isLastMatch) {
@@ -1371,7 +1540,7 @@
                 };
 
                 wrap.addEventListener('mousedown', down); 
-                wrap.addEventListener('touchstart', down, {passive:true}); 
+                wrap.addEventListener('touchstart', down, {passive:false}); 
                 wrap.addEventListener('mouseup', up); 
                 wrap.addEventListener('mouseleave', up); 
                 wrap.addEventListener('touchend', up);
@@ -1379,9 +1548,60 @@
                 currentZooAnimals.push(obj); 
                 this.animalAI(obj);
             },
+
+            dropGem(ani) {
+                if(MatchState.isPrankMode || State.trashCount > 0) return;
+                
+                let zone = ani.container;
+                let gem = document.createElement('img');
+                gem.src = './img/gem.png';
+                gem.className = 'dropped-gem';
+                
+                let offsetX = (Math.random() - 0.5) * 40;
+                let offsetY = (Math.random() - 0.5) * 20;
+                let gX = ani.x + 15 + offsetX; 
+                let gY = ani.y - 10 + offsetY; 
+                
+                gem.style.left = gX + 'px';
+                gem.style.top = gY + 'px';
+                gem.style.zIndex = Math.floor(gY);
+
+                let collected = false;
+                let collectFn = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if(collected) return;
+                    collected = true;
+                    
+                    let rect = gem.getBoundingClientRect();
+                    gem.remove();
+                    
+                    AudioSys.click();
+                    EventSystem.flyItem('gem', 1, rect.left, rect.top, true);
+                };
+                
+                gem.addEventListener('mousedown', collectFn);
+                gem.addEventListener('touchstart', collectFn, {passive: false});
+
+                zone.appendChild(gem);
+
+                setTimeout(() => {
+                    if(!collected && gem.parentNode) {
+                        gem.style.opacity = '0';
+                        gem.style.transform = 'scale(0)';
+                        setTimeout(() => gem.remove(), 300);
+                    }
+                }, 15000);
+            },
+
             animalAI(ani) {
                 if(!ani.wrapper.parentNode) return;
                 if(ani.wrapper.classList.contains('charging') || ani.wrapper.style.opacity==='0' || ani.wrapper.dataset.panic==='true') { setTimeout(()=>this.animalAI(ani), 1000); return; }
+                
+                if(Math.random() < 0.15) {
+                    this.dropGem(ani);
+                }
+
                 if(Math.random() < 0.4) {
                     ani.img.className='zoo-animal walking';
                     let tX = 24 + Math.random()*(ani.container.clientWidth - 108), tY = 40 + Math.random()*(ani.container.clientHeight - 144);
@@ -1615,28 +1835,42 @@
         const habArea = document.getElementById('habitat-animal-area');
         let scrollerIsDown = false, scrollerStartX, scrollerScrollLeft;
 
+        scroller.addEventListener('touchstart', (e) => { 
+            scrollerIsDown = true; scroller.classList.add('active'); 
+            scrollerStartX = e.touches[0].pageX; scrollerScrollLeft = scroller.scrollLeft; 
+        }, {passive:true});
         scroller.addEventListener('mousedown', (e) => { 
             scrollerIsDown = true; scroller.classList.add('active'); 
             scrollerStartX = e.pageX; scrollerScrollLeft = scroller.scrollLeft; 
         });
-        window.addEventListener('mouseup', () => { 
+
+        const endScroll = () => { 
             if(scrollerIsDown) { scrollerIsDown = false; scroller.classList.remove('active'); scroller.style.scrollSnapType = 'x mandatory'; scroller.style.scrollBehavior = 'smooth'; setTimeout(()=>ZooSystem.updateUI(), 350); } 
             if(habIsDown) { habIsDown = false; habArea.style.scrollSnapType = 'x mandatory'; habArea.style.scrollBehavior = 'smooth'; scroller.style.scrollSnapType = 'x mandatory'; scroller.style.scrollBehavior = 'smooth'; setTimeout(()=>ZooSystem.updateUI(), 350); }
-        });
-        window.addEventListener('mousemove', (e) => { 
-            if (scrollerIsDown) { scroller.style.scrollSnapType = 'none'; scroller.style.scrollBehavior = 'auto'; scroller.scrollLeft = scrollerScrollLeft - (e.pageX - scrollerStartX) * 1.5; }
+        };
+        window.addEventListener('mouseup', endScroll);
+        window.addEventListener('touchend', endScroll);
+
+        const moveScroll = (pageX) => {
+            if (scrollerIsDown) { scroller.style.scrollSnapType = 'none'; scroller.style.scrollBehavior = 'auto'; scroller.scrollLeft = scrollerScrollLeft - (pageX - scrollerStartX) * 1.5; }
             if (habIsDown) { 
-                const walk = (e.pageX - habStartX) * 1.5; let targetScroll = habScrollLeft - walk; 
+                const walk = (pageX - habStartX) * 1.5; let targetScroll = habScrollLeft - walk; 
                 if (targetScroll < 0) { habArea.scrollLeft = 0; scroller.scrollLeft = initialScrollerScroll + targetScroll; } 
                 else { habArea.scrollLeft = targetScroll; scroller.scrollLeft = initialScrollerScroll; }
             }
-        });
+        };
+        window.addEventListener('mousemove', (e) => moveScroll(e.pageX));
+        window.addEventListener('touchmove', (e) => moveScroll(e.touches[0].pageX), {passive:true});
 
         let habIsDown = false, habStartX, habScrollLeft, initialScrollerScroll;
         habArea.addEventListener('mousedown', (e) => { 
             habIsDown = true; habArea.style.scrollSnapType = 'none'; habArea.style.scrollBehavior = 'auto'; scroller.style.scrollSnapType = 'none'; scroller.style.scrollBehavior = 'auto'; 
             habStartX = e.pageX; habScrollLeft = habArea.scrollLeft; initialScrollerScroll = scroller.scrollLeft; e.stopPropagation(); 
         });
+        habArea.addEventListener('touchstart', (e) => { 
+            habIsDown = true; habArea.style.scrollSnapType = 'none'; habArea.style.scrollBehavior = 'auto'; scroller.style.scrollSnapType = 'none'; scroller.style.scrollBehavior = 'auto'; 
+            habStartX = e.touches[0].pageX; habScrollLeft = habArea.scrollLeft; initialScrollerScroll = scroller.scrollLeft; e.stopPropagation(); 
+        }, {passive:true});
 
         scroller.addEventListener('scroll', () => ZooSystem.updateUI());
         habArea.addEventListener('scroll', () => ZooSystem.updateUI());
@@ -1682,7 +1916,13 @@
             dropTrash(x, y, isFake=false) {
                 let t = document.createElement('div'); t.className = isFake?'trash-obj':'trash-obj player-trash'; t.innerText=Config.TRASH[Math.floor(Math.random()*Config.TRASH.length)];
                 t.style.left=x+'px'; t.style.top=y+'px'; t.style.transform=`rotate(${Math.random()*360}deg)`;
-                if(!isFake) t.onclick = (e) => { e.stopPropagation(); t.style.transform='scale(0)'; setTimeout(()=>{t.remove(); State.trashCount--; Storage.save(); if(State.trashCount<=0) { UI.toast("✨ 打扫干净啦！游客们回来了！"); currentZooAnimals.forEach(a=>a.wrapper.dataset.panic='false'); ZooSystem.initVisitors(); }}, 200); };
+                
+                let cleanUp = (e) => { e.stopPropagation(); t.style.transform='scale(0)'; setTimeout(()=>{t.remove(); State.trashCount--; Storage.save(); if(State.trashCount<=0) { UI.toast("✨ 打扫干净啦！游客们回来了！"); currentZooAnimals.forEach(a=>a.wrapper.dataset.panic='false'); ZooSystem.initVisitors(); }}, 200); };
+                
+                if(!isFake) {
+                    t.addEventListener('mousedown', cleanUp);
+                    t.addEventListener('touchstart', cleanUp, {passive:false});
+                }
                 ZooSystem.area.appendChild(t);
             },
             renderTrash() { document.querySelectorAll('.player-trash').forEach(e=>e.remove()); if(State.trashCount<=0) return; for(let i=0; i<State.trashCount; i++) this.dropTrash(Math.random()*(ZooSystem.area.scrollWidth-100)+50, Math.random()*(ZooSystem.area.clientHeight-100)+50); },
@@ -1702,7 +1942,11 @@
                 if(!MatchState.isPrankMode || MatchState.prankTrashCount<=0) return; MatchState.prankTrashCount=0; 
                 let gc = document.getElementById('game-container');
                 gc.style.animation='none'; gc.offsetHeight; gc.style.animation='screenShake 0.3s ease-out';
-                let r = ZooSystem.area.getBoundingClientRect(), cX = e.clientX-r.left+ZooSystem.area.scrollLeft, cY = e.clientY-r.top;
+                
+                let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+                let r = ZooSystem.area.getBoundingClientRect(), cX = clientX-r.left+ZooSystem.area.scrollLeft, cY = clientY-r.top;
 
                 for(let i=0; i<10; i++) setTimeout(()=>{ AudioSys.click(); this.dropTrash(cX+(Math.random()-0.5)*200, cY+(Math.random()-0.5)*100, true); }, i*100);
 
@@ -1727,7 +1971,6 @@
                     return;
                 }
                 
-                // 动态计算派对价格
                 let cost = State.partyCount === 0 ? 1000 : (State.partyCount === 1 ? 3000 : 5000);
 
                 if (State.coins < cost) {
@@ -1738,7 +1981,7 @@
                 State.coins -= cost;
                 State.partyCount++;
                 Storage.save();
-                UI.update(); // 这会更新按钮上的价格显示
+                UI.update();
                 
                 gc.classList.add('party-active'); 
                 AudioSys.bgmPlay();
@@ -1749,7 +1992,7 @@
                     let ts = Array.from(document.querySelectorAll('.visitor')); 
                     if(ts.length===0) return;
                     let lucky = ts[Math.floor(Math.random()*ts.length)], r = lucky.getBoundingClientRect();
-                    this.flyCoin(1, r.left+r.width/2, r.top+r.height/2, true);
+                    this.flyItem('coin', 1, r.left+r.width/2, r.top+r.height/2, true);
                 }, 600);
                 
                 setTimeout(()=>{ 
@@ -1757,11 +2000,6 @@
                     AudioSys.bgmPause(); 
                     clearInterval(partyCoinTimer); 
                     
-                    State.gems += 10;
-                    Storage.save();
-                    UI.update();
-                    UI.toast("🎉 狂欢结束！奖励 +10 钻石！");
-
                     let pR = document.getElementById('zoo-gem-count').getBoundingClientRect();
                     let c = document.createElement('img'); 
                     c.src = './img/gem.png'; 
@@ -1775,20 +2013,31 @@
                         c.style.opacity = 0; 
                         c.style.transform = 'translate(-50%, -50%) scale(0.3)'; 
                     }, 800);
-                    setTimeout(() => c.remove(), 1800);
+                    
+                    setTimeout(() => {
+                        c.remove();
+                        State.gems += 10;
+                        Storage.save();
+                        UI.update();
+                        UI.toast("🎉 狂欢结束！奖励 +10 钻石！");
+                    }, 1800);
 
                 }, 60000);
             },
             
-            flyCoin(amt, x, y, toZoo=false) {
+            flyItem(type, amt, x, y, toZoo=false) {
+                let isGem = type === 'gem';
                 let c = document.createElement('img'); 
-                c.src = './img/animal_coin.png'; 
+                c.src = isGem ? './img/gem.png' : './img/animal_coin.png'; 
                 c.style.cssText = `position:fixed; left:${x}px; top:${y}px; width:30px; height:30px; z-index:99999; pointer-events:none; transition:all 0.8s cubic-bezier(0.25, 1, 0.5, 1); filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transform: scale(1);`; 
                 document.body.appendChild(c);
                 
                 c.offsetHeight; 
                 
-                let targetId = toZoo ? 'zoo-coin-count' : 'coin-pill';
+                let targetId;
+                if(isGem) targetId = toZoo ? 'zoo-gem-count' : 'gem-pill';
+                else targetId = toZoo ? 'zoo-coin-count' : 'coin-pill';
+                
                 let pR = document.getElementById(targetId).getBoundingClientRect();
                 
                 setTimeout(() => { 
@@ -1800,12 +2049,15 @@
                 
                 setTimeout(() => { 
                     c.remove(); 
-                    State.coins += amt; 
+                    if(isGem) State.gems += amt;
+                    else State.coins += amt;
                     Storage.save(); 
                 }, 850);
             }
         };
-        ZooSystem.area.addEventListener('click', (e) => { if(MatchState.isPrankMode) EventSystem.throwPrankTrash(e); });
+        
+        ZooSystem.area.addEventListener('mousedown', (e) => { if(MatchState.isPrankMode) EventSystem.throwPrankTrash(e); });
+        ZooSystem.area.addEventListener('touchstart', (e) => { if(MatchState.isPrankMode) EventSystem.throwPrankTrash(e); }, {passive:false});
 
         setInterval(() => {
             if (State.animals.length > 0 && State.trashCount <= 0) {
@@ -1832,7 +2084,13 @@
         }, 5000);
 
         // ==================== 8. 启动 ====================
-        window.addEventListener('load', () => { SpineManager.init(); Storage.load(); ZooSystem.open(true); UI.checkMainRedDot(); });
+        window.addEventListener('load', () => { 
+            SpineManager.init(() => {
+                Storage.load(); 
+                ZooSystem.open(true); 
+                UI.checkMainRedDot(); 
+            }); 
+        });
     </script>
 </body>
 </html>
